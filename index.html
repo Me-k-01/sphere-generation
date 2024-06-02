@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>Facteur de forme</title>
+		<script src="scripts/gl_matrix.js"></script> 
+		<script src="scripts/ray.js"></script>
+		<script src="scripts/vec3.js"></script> 
+		<script src="scripts/camera.js"></script>
+		<script src="scripts/quad.js"></script>
+		<script src="scripts/sphere.js"></script>
+		<script src="scripts/main.js" defer></script>
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<canvas id="canvas" width="800" height="600">
+			Your browser does not support HTML5
+		</canvas> 
+		<div class="controllers">
+   
+			<div class="group yellow">
+				<h2>N</h2>
+				<div class="sliders">
+					<div>
+						<input type="range" id="slider-n" name="N" value="2" min="2" max="10" step="1" autocomplete="off" />
+						<input type="number" id="input-n" name="N" value="2" min="2" max="10" step="1" autocomplete="off" />
+					</div> 
+				</div>
+			</div>
+			
+			<nav>
+				<button id="controller-left"> << </button>
+				<button id="controller-right"> >> </button>
+			</nav>
+		</div>
+	</body>
+</html>
