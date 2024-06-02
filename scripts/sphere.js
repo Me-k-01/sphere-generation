@@ -7,7 +7,7 @@
  * @param {Array} vertices Buffer de couleurs
  */
 
-function addGizmo(pos, vertices, indices, colors, size = 0.05) {  
+function addGizmo(pos, vertices, indices, colors, size = 0.01) {  
     const offsetId = vertices.length / 3; // Nombre actuel de sommets / 3 (car chaque sommet a 3 coordonnées)
     
     const newVertices = [

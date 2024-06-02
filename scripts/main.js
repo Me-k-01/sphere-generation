@@ -106,16 +106,24 @@ const camera = new Camera(canvas);
 const nSlider = document.getElementById("slider-n");
 const nInput = document.getElementById("input-n");
  
+function changeN(n) {
+    const sphere = polys[0];
+    sphere.n = n;
+    sphere.initGL(gl, program);
+}
+
 nSlider.addEventListener("input", (event) => {
     const v = event.target.value;
     console.log("n = ", v );
     nInput.value = v; 
+    changeN(v);
 });
 
 nInput.addEventListener("input", (event) => { 
     const v = event.target.value;   
     console.log("n = ", v );
     nSlider.value = v;
+    changeN(v);
 }); 
 
 /**
