@@ -27,7 +27,7 @@ function addGizmo(pos, vertices, indices, colors, size = 0.01) {
 
     // Appliquer la transformation et la position
     const transformedVertices = newVertices.map((p, i) => p * size + pos.get(i % 3));
-    Array.prototype.push.apply(vertices, transformedVertices);
+    vertices.push(...transformedVertices);
  
     // Mise à jour des indices en tenant compte de la base
     const newIndices = [
@@ -38,7 +38,7 @@ function addGizmo(pos, vertices, indices, colors, size = 0.01) {
         16, 17, 18, 16, 18, 19, // right
         20, 21, 22, 20, 22, 23, // left
     ].map(i => i + offsetId);
-    Array.prototype.push.apply(indices, newIndices);  
+    indices.push(...newIndices);  
 
     const faceCols = [
         [1.0, 1.0, 1.0, 1.0], // Front face: white
@@ -50,10 +50,10 @@ function addGizmo(pos, vertices, indices, colors, size = 0.01) {
     ];  
     for (const c of faceCols) { 
       // Four vertices of the face 
-      Array.prototype.push.apply(colors, c) ;
-      Array.prototype.push.apply(colors, c) ;
-      Array.prototype.push.apply(colors, c) ;
-      Array.prototype.push.apply(colors, c) ; 
+      colors.push(...c) ;
+      colors.push(...c) ;
+      colors.push(...c) ;
+      colors.push(...c) ;
     }   
 }
 
