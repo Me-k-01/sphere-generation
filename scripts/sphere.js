@@ -104,6 +104,8 @@ class Sphere {
         const scale = 2; // Scale of the sphere 
         const phi = Math.PI * (Math.sqrt(5) - 1);  // golden angle in radians
 
+        const toggle_point = document.getElementById("toggle_point").checked;
+
         for (let i = 0; i < nVertices; i++) {
             const y = (1 - (i / nVertices) * 2);  // y goes from 1 to -1
             const radius = Math.sqrt(1 - y * y);  // radius at y
@@ -121,13 +123,12 @@ class Sphere {
             mesh.push(pos); 
         }
         
-        // Pour chaque potentiel triangle de la sphere 
-        const sliceMesh = Math.trunc(nVertices/3); 
-        for (let i = 0; i < sliceMesh ; i++) {
-            for (let j = sliceMesh; j < sliceMesh*2; j++) {
-
-            current_triangle_to_evaluate:
-                for (let k = sliceMesh*2; k < nVertices ; k++) {
+        // Pour chaque potentiel triangle de la sphere  
+        for (let i = 0; i < nVertices ; i++) {
+            for (let j = 0; j < nVertices; j++) { 
+                for (let k = 0; k < nVertices ; k++) {
+                    if (i === j || i === k || j === k) 
+                        continue;
                     // On forme le triangle à évaluer  
                     // Le plan est définis selon la normal 
                     // console.log(mesh[i]);
@@ -136,21 +137,11 @@ class Sphere {
                     // console.log(Vec3.sub(mesh[j], mesh[i]));
                     // console.log(Vec3.sub(mesh[k], mesh[i]));
                     let normal = Vec3.sub(mesh[j], mesh[i]).cross(Vec3.sub(mesh[k], mesh[i])) ;
-                    normal.normalize();
-
-                    const m = middle(mesh[i], mesh[j], mesh[k])
-                    // On arange les points pour que leurs normal pointent vers l'exterieur de la sphere
-                    if (normal.dot( m ) < 0) { 
-                        // Inversion du sens de lecture des points du triangles   
-                        // const interm = j;
-                        // j = k;
-                        // k = interm;
-                        // normal.mul(-1);  
-                    }
+                    normal.normalize(); 
 
                     let sign = 0;
                     // Verifie que le triangle est minimal, en s'assurant que chaque points est de l'autre coté du plan. 
-                    const polygones = [i, j, k]; // Points appartenant au plan
+                    let polygones = [i, j, k]; // Points appartenant au plan
                     for (let x = 0; x<nVertices; x++) {
                         if (x === i || x === j || x === k) 
                             continue;
@@ -165,8 +156,10 @@ class Sphere {
 
                         if (sign === 0) 
                             sign = Math.sign(cosTheta); // Pick a sign for the first time
-                        if (sign !== Math.sign(cosTheta))
-                            break current_triangle_to_evaluate;
+                        if (sign !== Math.sign(cosTheta)) {
+                            polygones = [];
+                            break;
+                        } 
 
                         // console.log(cosTheta);
                         // if (cosTheta > 0) 
@@ -176,17 +169,24 @@ class Sphere {
                     }
                     // console.log("Adding triangle : ", polygones);
                     // Ajouter ce triangles au rendu
-                    if (polygones.length === 3) {
-                        indices.push(i, j, k);
-                        indices.push(i, k, j);
-                    }
+                    if (polygones.length === 3) { 
+                        const m = middle(polygones[0], polygones[1], polygones[2])
+                        // On arange les points pour que leurs normal pointent vers l'exterieur de la sphere
+                        if (normal.dot( m ) < 0) { 
+                            // Inversion du sens de lecture des points du triangles    
+                            // normal.mul(-1);   
+                            indices.push(i, j, k);
+                        } else {
+                            indices.push(i, k, j);
+                        } 
+                    } 
                 }
             }
         }
-
-        for (const pos of mesh) {
-            addGizmo(pos, vertices, indices, colors)
-        }
+        if (toggle_point)
+            for (const pos of mesh) {
+                addGizmo(pos, vertices, indices, colors)
+            }
         // console.log(indices);
 
         return {vertices, indices, colors};
