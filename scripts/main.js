@@ -106,7 +106,7 @@ const camera = new Camera(canvas);
 const nSlider = document.getElementById("slider-n");
 const nInput = document.getElementById("input-n");
  
-function changeN(n) {
+function changeSphere(n) {
     const sphere = polys[0];
     sphere.n = n;
     sphere.initGL(gl, program);
@@ -116,14 +116,19 @@ nSlider.addEventListener("input", (event) => {
     const v = event.target.value;
     console.log("n = ", v );
     nInput.value = v; 
-    changeN(v);
+    changeSphere(v);
 });
 
 nInput.addEventListener("input", (event) => { 
-    const v = event.target.value;   
-    console.log("n = ", v );
+    const v = event.target.value;    
     nSlider.value = v;
-    changeN(v);
+    changeSphere(v);
+}); 
+document.getElementById("toggle_triangle_coloring").addEventListener("input", (event) => {  
+    changeSphere(polys[0].n);
+}); 
+document.getElementById("toggle_point").addEventListener("input", (event) => {  
+    changeSphere(polys[0].n);
 }); 
 
 /**

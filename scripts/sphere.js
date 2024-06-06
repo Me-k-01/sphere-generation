@@ -105,6 +105,7 @@ class Sphere {
         const phi = Math.PI * (Math.sqrt(5) - 1);  // golden angle in radians
 
         const toggle_point = document.getElementById("toggle_point").checked;
+        const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked;
 
         for (let i = 0; i < nVertices; i++) {
             const y = (1 - (i / nVertices) * 2);  // y goes from 1 to -1
@@ -117,69 +118,81 @@ class Sphere {
             
             const pos = new Vec3(x, y, z).mul(scale); 
 
-            vertices.push(pos.x, pos.y, pos.z); 
-            colors.push(Math.random(), Math.random(), 1.0, 1.0); 
+            // Goureau coloring
+            if (! separate_triangle_coloring) { 
+                vertices.push(pos.x, pos.y, pos.z); 
+                colors.push(Math.random(), Math.random(), 1.0, 1.0); 
+            } 
 
             mesh.push(pos); 
         }
         
         // Pour chaque potentiel triangle de la sphere  
         for (let i = 0; i < nVertices ; i++) {
-            for (let j = 0; j < nVertices; j++) { 
-                for (let k = 0; k < nVertices ; k++) {
-                    if (i === j || i === k || j === k) 
-                        continue;
-                    // On forme le triangle à évaluer  
-                    // Le plan est définis selon la normal 
-                    // console.log(mesh[i]);
-                    // console.log(mesh[j]);
-                    // console.log(mesh[k]);
-                    // console.log(Vec3.sub(mesh[j], mesh[i]));
-                    // console.log(Vec3.sub(mesh[k], mesh[i]));
+            for (let j = i+1; j < nVertices; j++) { 
+                for (let k = j+1; k < nVertices ; k++) { 
+                    // On evalue le triangle Pi, Pj, Pk  
+                    // Le plan du triangle est définis selon sa normal  
                     let normal = Vec3.sub(mesh[j], mesh[i]).cross(Vec3.sub(mesh[k], mesh[i])) ;
                     normal.normalize(); 
 
-                    let sign = 0;
+                    let sign = 0;  
                     // Verifie que le triangle est minimal, en s'assurant que chaque points est de l'autre coté du plan. 
                     let polygones = [i, j, k]; // Points appartenant au plan
                     for (let x = 0; x<nVertices; x++) {
                         if (x === i || x === j || x === k) 
-                            continue;
-                        // Verifier qu'aucun point ne se trouve au dessus de la normal
-                        const cosTheta = normal.dot(Vec3.sub(mesh[x], mesh[i]));
+                            continue; 
+                        const cosTheta = normal.dot(Vec3.sub(mesh[x], mesh[i])); 
 
+                        // Cas ou le point est sur le plan (un cube circonscrie à la sphere possèderais des faces à 4 sommets par exemple)
                         if (cosTheta === 0) {
                             polygones.push(x);
                             console.log("Same plane : ", polygones);
                             continue;
                         } 
-
+                        // Choisir un signe pour la première fois
                         if (sign === 0) 
-                            sign = Math.sign(cosTheta); // Pick a sign for the first time
+                            sign = Math.sign(cosTheta);  
+
+                        // Verifier que chaque points de la sphere est du même côté de la normal
                         if (sign !== Math.sign(cosTheta)) {
                             polygones = [];
                             break;
-                        } 
-
-                        // console.log(cosTheta);
-                        // if (cosTheta > 0) 
-                        //     break current_triangle_to_evaluate;
-                        // Cas ou le point est sur le plan (un cube circonscrie à la sphere possèderais des faces à 4 sommets par exemple)
-                         
+                        }   
                     }
                     // console.log("Adding triangle : ", polygones);
                     // Ajouter ce triangles au rendu
                     if (polygones.length === 3) { 
-                        const m = middle(polygones[0], polygones[1], polygones[2])
+                        const m = middle(polygones[0], polygones[1], polygones[2]);
+                        if (separate_triangle_coloring) {  
+                            const n = vertices.length/3;
+                            indices.push(n, n+1, n+2);
+                            const color = [Math.random(), Math.random(), 1.0, 1.0];
+                            colors.push(...color, ...color, ...color); 
+                        }
                         // On arange les points pour que leurs normal pointent vers l'exterieur de la sphere
                         if (normal.dot( m ) < 0) { 
-                            // Inversion du sens de lecture des points du triangles    
-                            // normal.mul(-1);   
-                            indices.push(i, j, k);
-                        } else {
-                            indices.push(i, k, j);
+                            // Inversion du sens de lecture des points du triangles
+
+                            if (separate_triangle_coloring) {   
+                                vertices.push(mesh[i].x, mesh[i].y, mesh[i].z);
+                                vertices.push(mesh[j].x, mesh[j].y, mesh[j].z);
+                                vertices.push(mesh[k].x, mesh[k].y, mesh[k].z);   
+                            } else {  
+                                indices.push(i, j, k); 
+                            }  
+                        } else {  
+                            if (separate_triangle_coloring) {  
+                                vertices.push(mesh[i].x, mesh[i].y, mesh[i].z); 
+                                vertices.push(mesh[k].x, mesh[k].y, mesh[k].z);
+                                vertices.push(mesh[j].x, mesh[j].y, mesh[j].z);   
+                            } else {  
+                                indices.push(i, k, j);
+                            }  
                         } 
-                    } 
+                    } else if (polygones.length>3) {
+                        // Delaunay
+                    }
                 }
             }
         }
