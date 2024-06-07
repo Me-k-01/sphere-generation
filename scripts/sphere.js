@@ -83,7 +83,18 @@ function addCube(pos, vertices, indices, colors, size = 0.02) {
     colors.push(...c, ...c, ...c, ...c) ;  
     colors.push(...c, ...c, ...c, ...c) ;  
 }
-
+ 
+/**
+ * Calulate the area of the triangle formed by v0, v1, v2
+ * @param {Vec3} v0  
+ * @param {Vec3} v1  
+ * @param {Vec3} v2  
+ */ 
+function area(v0, v1, v2) { 
+    const u = Vec3.sub(v1, v0);
+    const v = Vec3.sub(v2, v0); 
+    return u.cross(v).getNorm() / 2;
+}
 // Returns the middle of the triangle
 function middle(v0, v1, v2) {
     return Vec3.add(v0, v1).add(v2);
@@ -149,7 +160,7 @@ class Sphere {
             
             const pos = new Vec3(x, y, z).mul(scale); 
 
-            // Goureau coloring
+            // Vertex coloring
             if (! separate_triangle_coloring) { 
                 vertices.push(pos.x, pos.y, pos.z); 
                 colors.push(Math.random(), Math.random(), 1.0, 1.0); 
@@ -190,15 +201,16 @@ class Sphere {
                             polygones = [];
                             break;
                         }   
-                    }
-                    // console.log("Adding triangle : ", polygones);
-                    // Ajouter ce triangles au rendu
+                    } 
+                    // Ajouter ce triangle au rendu
                     if (polygones.length === 3) { 
                         const m = middle(polygones[0], polygones[1], polygones[2]);
                         if (separate_triangle_coloring) {  
                             const n = vertices.length/3;
                             indices.push(n, n+1, n+2);
-                            const color = [Math.random(), Math.random(), 1.0, 1.0];
+                            const a = area(mesh[i], mesh[j], mesh[k]);
+                            console.log(a);
+                            const color = [0, a, 1.0, 1.0];  
                             colors.push(...color, ...color, ...color); 
                         }
                         // On arange les points pour que leurs normal pointent vers l'exterieur de la sphere
@@ -222,7 +234,7 @@ class Sphere {
                             }  
                         } 
                     } else if (polygones.length>3) {
-                        // Delaunay
+                        // TODO : Delaunay
                     }
                 }
             }
