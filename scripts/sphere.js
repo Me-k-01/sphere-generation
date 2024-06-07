@@ -244,15 +244,17 @@ class Sphere {
                 }
             }
         } 
-        const optimum_area = Math.PI * 4 * (scale) ** 2 / nTri;
-        for (let i = 0; i < colors.length; i += 4) {
-            const a = colors[i+0];  
-            const v = a < optimum_area ? a/optimum_area : optimum_area/a; 
-            // console.log("area :", a, "optimum area :", optimum_area, "ratio :", v);  
-   
-            colors[i+2] = v;
-            colors[i+0] = 1-v;
-        }
+        if (separate_triangle_coloring) { 
+            const optimum_area = Math.PI * 4 * (scale) ** 2 / nTri;
+            for (let i = 0; i < colors.length; i += 4) {
+                const a = colors[i+0];  
+                const v = a < optimum_area ? a/optimum_area : optimum_area/a; 
+                // console.log("area :", a, "optimum area :", optimum_area, "ratio :", v);  
+       
+                colors[i+2] = v;
+                colors[i+0] = 1-v;
+            }
+        } 
         if (toggle_point)
             for (const pos of mesh) {
                 addCube(pos, vertices, indices, colors)

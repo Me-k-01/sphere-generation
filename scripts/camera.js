@@ -1,8 +1,6 @@
 /** Permet de déplacer la vue du contexte OpenGL selon les entrées clavier */
 class Camera {
-    constructor(canvas) {        
-        
-        
+    constructor(canvas) {     
         this.matWorldUniformLocation = gl.getUniformLocation(program, 'mWorld');
         this.matViewUniformLocation = gl.getUniformLocation(program, 'mView');
         this.matProjUniformLocation = gl.getUniformLocation(program, 'mProj');
@@ -102,10 +100,13 @@ class Camera {
 
     /**
      * Effectue les déplacement de la caméra 
+     * @param {number} ms Le temps en milliseconde depuis le dernier appel à update. 
      */
     updateMove(ms) {
         const moveH = (+this.controller.right) + (-this.controller.left); 
+        const moveV = (+this.controller.up) + (-this.controller.down); 
         this.viewAngleHorizontal += moveH * 0.004 *    (ms-this.lastUpdate) ;
+        this.viewAngleVertical += moveV * 0.004 *    (ms-this.lastUpdate) ;
         this.lastUpdate = ms; 
     }
     
