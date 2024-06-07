@@ -113,8 +113,7 @@ function changeSphere(n) {
 }
 
 nSlider.addEventListener("input", (event) => {
-    const v = event.target.value;
-    console.log("n = ", v );
+    const v = event.target.value; 
     nInput.value = v; 
     changeSphere(v);
 });

@@ -1,13 +1,12 @@
 
 /**
- * Ajoute un gizmo à l'affichage  
+ * Ajoute un gizmo à l'affichage
  * @param {Vec3} pos Le centre du gizmo 
- * @param {Array} vertices VBO
- * @param {Array} vertices IBO
- * @param {Array} vertices Buffer de couleurs
- */
-
-function addGizmo(pos, vertices, indices, colors, size = 0.01) {  
+ * @param {Array<float>} vertices Vertex buffer object
+ * @param {Array<float>} vertices Index buffer object
+ * @param {Array<float>} vertices Color buffer
+ */ 
+function addGizmo(pos, vertices, indices, colors, size = 0.02) {  
     const offsetId = vertices.length / 3; // Nombre actuel de sommets / 3 (car chaque sommet a 3 coordonnées)
      
     // Appliquer la transformation et la position
@@ -24,7 +23,7 @@ function addGizmo(pos, vertices, indices, colors, size = 0.01) {
         1, -1, -1,      1, 1, -1,      1, 1, 1,      1, -1, 1,
         // Left face
         -1, -1, -1,    -1, -1, 1,     -1, 1, 1,     -1, 1, -1,
-    ].map((p, i) => p * size + pos.get(i % 3));
+    ].map((p, i) => p * size/2 + pos.get(i % 3));
     vertices.push(...transformedVertices);
  
     // Mise à jour des indices en tenant compte de la base
@@ -50,6 +49,39 @@ function addGizmo(pos, vertices, indices, colors, size = 0.01) {
       // Four vertices of the face 
       colors.push(...c, ...c, ...c, ...c) ;  
     }   
+}
+
+/**
+ * Ajoute un cube au buffer d'affichage web-gl
+ * @param {Vec3} pos Le centre du gizmo 
+ * @param {Array<float>} vertices Vertex buffer object
+ * @param {Array<float>} vertices Index buffer object
+ * @param {Array<float>} vertices Color buffer
+ */ 
+function addCube(pos, vertices, indices, colors, size = 0.02) {  
+    const offsetId = vertices.length / 3; // Nombre actuel de sommets / 3 (car chaque sommet a 3 coordonnées)
+     
+    // Appliquer la transformation et la position
+    const transformedVertices = [ 
+        -1, -1, 1,      1, -1, 1,      1, 1, 1,     -1, 1, 1, // Front face
+        -1, -1, -1,    -1, 1, -1,      1, 1, -1,     1, -1, -1, // Back face
+    ].map((p, i) => p * size/2 + pos.get(i % 3));
+    vertices.push(...transformedVertices);
+ 
+    // Mise à jour des indices en tenant compte de la base
+    const newIndices = [
+        0, 1, 2, 0, 2, 3, // front
+        4, 5, 6, 4, 6, 7, // back
+        5, 3, 2, 5, 2, 6, // top
+        4, 7, 1, 4, 1, 0, // bottom
+        7, 6, 2, 7, 2, 1, // right
+        4, 0, 3, 4, 3, 5, // left
+    ].map(i => i + offsetId);
+    indices.push(...newIndices);  
+
+    const c =  [1.0, 0.0, 0.0, 1.0] ; // blue  
+    colors.push(...c, ...c, ...c, ...c) ;  
+    colors.push(...c, ...c, ...c, ...c) ;  
 }
 
 // Returns the middle of the triangle
@@ -100,13 +132,12 @@ class Sphere {
         let colors = [];
 
         let mesh = []
-
+        
         const scale = 2; // Scale of the sphere 
         const phi = Math.PI * (Math.sqrt(5) - 1);  // golden angle in radians
 
         const toggle_point = document.getElementById("toggle_point").checked;
-        const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked;
-
+        const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked;  
         for (let i = 0; i < nVertices; i++) {
             const y = (1 - (i / nVertices) * 2);  // y goes from 1 to -1
             const radius = Math.sqrt(1 - y * y);  // radius at y
@@ -198,7 +229,7 @@ class Sphere {
         }
         if (toggle_point)
             for (const pos of mesh) {
-                addGizmo(pos, vertices, indices, colors)
+                addCube(pos, vertices, indices, colors)
             }
         // console.log(indices);
 
