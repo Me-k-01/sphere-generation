@@ -100,6 +100,10 @@ function middle(v0, v1, v2) {
     return Vec3.add(v0, v1).add(v2);
 }
 
+function clamp(x, a, b) {
+    return Math.max( a, Math.min(x, b) );
+} 
+
 /** Sphere **/
 class Sphere {
     /**
@@ -142,10 +146,11 @@ class Sphere {
         let indices = [];
         let colors = [];
 
-        let mesh = []
+        let mesh = [] 
         
         const scale = 2; // Scale of the sphere 
-        const phi = Math.PI * (Math.sqrt(5) - 1);  // golden angle in radians
+        const phi = Math.PI * (Math.sqrt(5) - 1);  // golden angle in radians 
+        let nTri = 0;
 
         const toggle_point = document.getElementById("toggle_point").checked;
         const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked;  
@@ -204,13 +209,13 @@ class Sphere {
                     } 
                     // Ajouter ce triangle au rendu
                     if (polygones.length === 3) { 
+                        nTri++;
                         const m = middle(polygones[0], polygones[1], polygones[2]);
                         if (separate_triangle_coloring) {  
                             const n = vertices.length/3;
                             indices.push(n, n+1, n+2);
-                            const a = area(mesh[i], mesh[j], mesh[k]);
-                            console.log(a);
-                            const color = [0, a, 1.0, 1.0];  
+                            const a = area(mesh[i], mesh[j], mesh[k]) ;   
+                            const color = [a, 0, 0, 1];  
                             colors.push(...color, ...color, ...color); 
                         }
                         // On arange les points pour que leurs normal pointent vers l'exterieur de la sphere
@@ -238,6 +243,15 @@ class Sphere {
                     }
                 }
             }
+        } 
+        const optimum_area = Math.PI * 4 * (scale) ** 2 / nTri;
+        for (let i = 0; i < colors.length; i += 4) {
+            const a = colors[i+0];  
+            const v = a < optimum_area ? a/optimum_area : optimum_area/a; 
+            // console.log("area :", a, "optimum area :", optimum_area, "ratio :", v);  
+   
+            colors[i+2] = v;
+            colors[i+0] = 1-v;
         }
         if (toggle_point)
             for (const pos of mesh) {
