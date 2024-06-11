@@ -126,72 +126,103 @@ class Sphere {
          * @type {number}
          * @public
          */
-        this.n = n ; 
+        this.n = n ;  
+        /**
+         * Radius de la sphère
+         * @type {number}
+         * @public
+         */
+        this.radius = 2;
+
+        /**
+         * L'ensemble des points de la sphere, groupé dans une liste 1D, en préparation à l'envoie au Vertices Buffer Object.
+         * @type {Array<number>}
+         * @private
+         */
+        this.vertices = [];
+        /**
+         * L'ensemble des triangles a rendre formant la sphere, groupé dans une liste 1D, en préparation à l'envoie à l'Indices Buffer Object.
+         * @type {Array<number>}
+         * @private
+         */
+        this.indices = [];
+        /**
+         * L'ensemble des couleurs de chaques points du triangles, groupé dans une liste 1D, en préparation à l'envoie au Color Buffer Object.
+         * @type {Array<number>}
+         * @private
+         */
+        this.colors = [];
     } 
     
     /**
      * Triangulisation de delauney contraintes 
+     * @param {Array<Vec3>} mesh Le radius de la sphere.
      */
-    delauney() {
+    delaunay() {
         
     }
 
-    
+
     /**
-     * Generation d'une sphere de fibonacci
-     * @param {number} nVertices nombre de points sur la sphere
+     * Generation d'un ensemble de point circonscrit à une sphere à partir d'une courbe de fibonacci.
+     * 
+     * @param {number} nVertices Nombre de points sur la sphere à générer.
+     * @param {number} radius Le radius de la sphere.
+     * 
+     * @returns {Array<Vec3>} Un ensemble de point circonrcit à la sphère.
      */
-    fibonacciSphere(nVertices) {   
-        let vertices = [];
-        let indices = [];
-        let colors = [];
+    generatePointsFibonacci(nVertices, radius) {
+        const mesh = []; 
+        const phi = Math.PI * (Math.sqrt(5) - 1);  // Angle d'or en radians 
 
-        let mesh = [] 
-        
-        const scale = 2; // Scale of the sphere 
-        const phi = Math.PI * (Math.sqrt(5) - 1);  // golden angle in radians 
-        let nTri = 0;
-
-        const toggle_point = document.getElementById("toggle_point").checked;
-        const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked;  
         for (let i = 0; i < nVertices; i++) {
-            const y = (1 - (i / nVertices) * 2);  // y goes from 1 to -1
-            const radius = Math.sqrt(1 - y * y);  // radius at y
+            const y = (1 - (i / nVertices) * 2);  // entre 1 et -1
+            const r = Math.sqrt(1 - y * y);  // Radius pour y
     
-            const theta = phi * i;  // golden angle increment
+            const theta = phi * i;  // Golden angle increment
     
-            const x = Math.cos(theta) * radius;
-            const z = Math.sin(theta) * radius;  
+            const x = Math.cos(theta) * r;
+            const z = Math.sin(theta) * r;  
             
-            const pos = new Vec3(x, y, z).mul(scale); 
+            const pos = new Vec3(x, y, z).mul(radius); 
 
-            // Vertex coloring
-            if (! separate_triangle_coloring) { 
-                vertices.push(pos.x, pos.y, pos.z); 
-                colors.push(Math.random(), Math.random(), 1.0, 1.0); 
-            } 
-
+            pos.add(this.pos);
             mesh.push(pos); 
         }
-        
-        // Pour chaque potentiel triangle de la sphere  
-        for (let i = 0; i < nVertices ; i++) {
-            for (let j = i+1; j < nVertices; j++) { 
-                for (let k = j+1; k < nVertices ; k++) { 
-                    // On evalue le triangle Pi, Pj, Pk  
-                    // Le plan du triangle est définis selon sa normal  
+
+        return mesh;
+    } 
+    /**
+     * Triangularisation d'un polygone convexe. 
+     * Ajoute les points et les faces a rendre respectivement dans this.vertices et this.indices.
+     * 
+     * @param {Array<Vec3>} mesh Un ensemble de point appartenant a un polygone convexe.
+     * 
+     * @returns {number} Retourne le nombre final de triangle à rendre
+     */
+    convexTriangulate(mesh) {  
+        let nTri = 0;
+        // Pour chaque triangle, on test s'il est une bordure du solide
+        for (let i = 0; i < this.n ; i++) {
+            for (let j = i+1; j < this.n; j++) { 
+                for (let k = j+1; k < this.n ; k++) { 
+                    // On évalue le triangle Pi, Pj, Pk
+
+                    // Le plan du triangle est définis selon sa normale 
                     let normal = Vec3.sub(mesh[j], mesh[i]).cross(Vec3.sub(mesh[k], mesh[i])) ;
                     normal.normalize(); 
 
                     let sign = 0;  
                     // Verifie que le triangle est minimal, en s'assurant que chaque points est de l'autre coté du plan. 
-                    let polygones = [i, j, k]; // Points appartenant au plan
-                    for (let x = 0; x<nVertices; x++) {
-                        if (x === i || x === j || x === k) 
+                    let polygones = [i, j, k]; // Points appartenants au plan formant la face
+
+                    for (let x = 0; x < this.n; x++) {
+                        if ( x === i || x === j || x === k ) 
                             continue; 
                         const cosTheta = normal.dot(Vec3.sub(mesh[x], mesh[i])); 
 
-                        // Cas ou le point est sur le plan (un cube circonscrie à la sphere possèderais des faces à 4 sommets par exemple)
+                        // Cas ou le point est sur le plan 
+                        // Car un solide quelconque circonscrit à la sphere pourrait possèder des faces à plus de 3 sommets (exemple du cube)
                         if (cosTheta === 0) {
                             polygones.push(x);
                             console.log("Same plane : ", polygones);
@@ -204,111 +235,151 @@ class Sphere {
                         // Verifier que chaque points de la sphere est du même côté de la normal
                         if (sign !== Math.sign(cosTheta)) {
                             polygones = [];
-                            break;
+                            break; 
                         }   
                     } 
+
                     // Ajouter ce triangle au rendu
                     if (polygones.length === 3) { 
+
                         nTri++;
                         const m = middle(polygones[0], polygones[1], polygones[2]);
-                        if (separate_triangle_coloring) {  
-                            const n = vertices.length/3;
-                            indices.push(n, n+1, n+2);
-                            const a = area(mesh[i], mesh[j], mesh[k]) ;   
-                            const color = [a, 0, 0, 1];  
-                            colors.push(...color, ...color, ...color); 
-                        }
-                        // On arange les points pour que leurs normal pointent vers l'exterieur de la sphere
-                        if (normal.dot( m ) < 0) { 
-                            // Inversion du sens de lecture des points du triangles
+                        const n = this.vertices.length/3;
+                        this.indices.push(n, n+1, n+2); 
 
-                            if (separate_triangle_coloring) {   
-                                vertices.push(mesh[i].x, mesh[i].y, mesh[i].z);
-                                vertices.push(mesh[j].x, mesh[j].y, mesh[j].z);
-                                vertices.push(mesh[k].x, mesh[k].y, mesh[k].z);   
-                            } else {  
-                                indices.push(i, j, k); 
-                            }  
-                        } else {  
-                            if (separate_triangle_coloring) {  
-                                vertices.push(mesh[i].x, mesh[i].y, mesh[i].z); 
-                                vertices.push(mesh[k].x, mesh[k].y, mesh[k].z);
-                                vertices.push(mesh[j].x, mesh[j].y, mesh[j].z);   
-                            } else {  
-                                indices.push(i, k, j);
-                            }  
-                        } 
-                    } else if (polygones.length>3) {
+                        // On arrange les points pour que leurs normales pointent vers l'exterieur de la sphere
+                        let v0 = mesh[i];
+                        let v1 = mesh[j];
+                        let v2 = mesh[k];
+
+                        // Inversion du sens de lecture des points du triangles
+                        if (normal.dot( m ) < 0)  
+                            [v1, v2] = [v2, v1];
+                        
+                        this.vertices.push(v0.x, v0.y, v0.z);
+                        this.vertices.push(v1.x, v1.y, v1.z);
+                        this.vertices.push(v2.x, v2.y, v2.z);
+
+                    } else if (polygones.length > 3) {
                         // TODO : Delaunay
                     }
                 }
             }
         } 
-        if (separate_triangle_coloring) { 
-            const optimum_area = Math.PI * 4 * (scale) ** 2 / nTri;
-            for (let i = 0; i < colors.length; i += 4) {
-                const a = colors[i+0];  
-                const v = a < optimum_area ? a/optimum_area : optimum_area/a; 
-                // console.log("area :", a, "optimum area :", optimum_area, "ratio :", v);  
-       
-                colors[i+2] = v;
-                colors[i+0] = 1-v;
+        return nTri; // On renvoi le nombre de triangle à rendre, car c'est une valeur qui est inconnu avant l'execution de l'algorithme de triangularisation.
+    }
+
+    /**
+     * Ajoute des couleurs pour chaque points du maillages pour afficher le rapport entre l'aire de chaque triangle et 
+     * l'aire optimal théorique pour l'homogénéité des triangles circonscrit à la sphere.
+     * 
+     * L'air de chaque face est retrouvé à partir de la liste this.indices.
+     * La couleur est un gradient entre le bleu et le rouge, donnée par le rapport : 
+     * aire optimal des triangles / aire calculé
+     * 
+     * Les couleurs sont ajoutés dans la liste 1D this.colors, qui contient les valeurs RGBA de chaque point du maillage pour le rendu WebGL.
+     * 
+     * @param {Array<Vec3>} mesh L'ensemble de point utilisé pour construire le maillage de la sphère
+     */
+    colorizeMeshByBestArea(mesh) {
+        const nTri = this.indices.length / 3; // Nombre de face que l'on doit rendre
+        const optimumArea = Math.PI * 4 * (this.radius) ** 2 / nTri; // L'aire optimal des triangles pour qu'ils soient tous équilatéraux.
+
+        for (let i = 0; i < this.indices.length; i += 3) {
+            const iv0 = this.indices[i+0]*3;
+            const iv1 = this.indices[i+1]*3;
+            const iv2 = this.indices[i+2]*3;  
+            const a = area(new Vec3(
+                this.vertices[iv0],
+                this.vertices[iv0+1],
+                this.vertices[iv0+2]
+            ), new Vec3(
+                this.vertices[iv1],
+                this.vertices[iv1+1],
+                this.vertices[iv1+2]
+            ), new Vec3(
+                this.vertices[iv2],
+                this.vertices[iv2+1],
+                this.vertices[iv2+2]
+            ));   
+
+            const c = a < optimumArea ? a/optimumArea : optimumArea/a; // Inversion pour ne pas dépasser 1 
+            this.colors.push(1-c, 0, c, 0); 
+            this.colors.push(1-c, 0, c, 0); 
+            this.colors.push(1-c, 0, c, 0); 
+        }
+    }
+
+    makeSphere() {
+        this.vertices = []
+        this.indices = []
+        this.colors = []
+
+        const toggle_point_preview = document.getElementById("toggle_point_preview").checked;
+        const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked; 
+        
+        const mesh = this.generatePointsFibonacci(this.n, this.radius);
+        this.convexTriangulate(mesh);
+        if (separate_triangle_coloring) {
+            this.colorizeMeshByBestArea(mesh);
+        } else {
+            // TODO : add another color type
+            this.colorizeMeshByBestArea(mesh);
+        }
+ 
+        if (toggle_point_preview) {
+            for (const p of mesh) {
+                addCube(p, this.vertices, this.indices, this.colors);
             }
         } 
-        if (toggle_point)
-            for (const pos of mesh) {
-                addCube(pos, vertices, indices, colors)
-            }
-        // console.log(indices);
-
-        return {vertices, indices, colors};
     }
-    
+     
     /**
      * Initialisation des buffers
      * @param {WebGLRenderingContext} gl Le contexte WebGL
      * @param {WebGLProgram} program Le program avec les shaders compilés
      */
     initGL(gl, program) {
-        // Mesh creation 
-        const {vertices, indices, colors} = this.fibonacciSphere(this.n); 
+        // Mesh creation  
+        this.makeSphere();
+
         /**
-         * Le nombre de triangles à rendre (comprends les gizmos)
+         * Le nombre de triangles à rendre (comprends les objets de visualisation des points)
          * @type {number}
          * @public
          */
-        this.nTriangle = indices.length / 3;  
+        this.nTriangle = this.indices.length / 3;  
         /**
-         * Le nombre de points du vbo (comprends les gizmos)
+         * Le nombre de points du vbo (comprends les objets de visualisation des points)
          * @type {number}
          * @public
          */
-        this.nVertices = indices.length ; 
+        this.nVertices = this.indices.length ; 
+
         // VBO
         this.vertexBufferObject = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBufferObject);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
 
         // IBO
         this.indexBufferObject = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBufferObject);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), gl.STATIC_DRAW);
 
         this.positionAttribLocation = gl.getAttribLocation(program, 'vPosition'); 
 
-        this.initColorBuffer(gl, program, colors); 
+        this.initColorBuffer(gl, program); 
     }
 
     /**
      * Initialisation du color buffer
      * @param {WebGLRenderingContext} gl Le contexte WebGL
-     * @param {WebGLProgram} program Le program avec les shaders compilés 
-     * @param {Array} colors le buffer de couleur 
+     * @param {WebGLProgram} program Le program avec les shaders compilés  
      */
-    initColorBuffer(gl, program, colors) {   
+    initColorBuffer(gl, program) {   
         this.colorBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.colors), gl.STATIC_DRAW);
 
         this.colorAttribLocation = gl.getAttribLocation(program, "vColor");
     }

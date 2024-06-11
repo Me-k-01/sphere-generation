@@ -126,7 +126,7 @@ nInput.addEventListener("input", (event) => {
 document.getElementById("toggle_triangle_coloring").addEventListener("input", (event) => {  
     changeSphere(polys[0].n);
 }); 
-document.getElementById("toggle_point").addEventListener("input", (event) => {  
+document.getElementById("toggle_point_preview").addEventListener("input", (event) => {  
     changeSphere(polys[0].n);
 }); 
 
