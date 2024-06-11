@@ -11,6 +11,7 @@ class Vec3 {
         this.x = x;    
         this.y = y;        
         this.z = z; 
+        this.neighboors = new Set();
     }
 
     /** Retourne le contenu de l'axe i du vecteur 

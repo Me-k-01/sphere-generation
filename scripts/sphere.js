@@ -194,14 +194,18 @@ class Sphere {
     } 
     /**
      * Triangularisation d'un polygone convexe. 
-     * Ajoute les points et les faces a rendre respectivement dans this.vertices et this.indices.
+     * Ajoute les points et les faces a rendre respectivement dans this.vertices et this.indices 
+     * en créant des doublons de chaque vertex pour que les points des faces puissent être colorier differamment selon les faces.
+     * On retourne tout de même une liste d'indices lié au mesh, pour pouvoir retrouver leurs relations d'adjacences dans notre structures de données.
      * 
      * @param {Array<Vec3>} mesh Un ensemble de point appartenant a un polygone convexe.
      * 
-     * @returns {number} Retourne le nombre final de triangle à rendre
+     * @returns {Array<number>} Retourne une liste d'indices de face qui seront rendu, liés à mesh
      */
     convexTriangulate(mesh) {  
-        let nTri = 0;
+        let nTri = 0; // Le nombre de triangle à rendre, n'est pas une valeur qui est connu avant l'execution de la procedure de triangularisation.
+        let meshIndices = []; // Une liste des points qui seront rendu, groupé par paires de 3 car l'on rends uniquement des triangles.
+
         // Pour chaque triangle, on test s'il est une bordure du solide
         for (let i = 0; i < this.n ; i++) {
             for (let j = i+1; j < this.n; j++) { 
@@ -240,25 +244,39 @@ class Sphere {
                     } 
 
                     // Ajouter ce triangle au rendu
-                    if (polygones.length === 3) { 
-
-                        nTri++;
+                    if (polygones.length === 3) {  
                         const m = middle(polygones[0], polygones[1], polygones[2]);
                         const n = this.vertices.length/3;
-                        this.indices.push(n, n+1, n+2); 
+                        this.indices.push(n, n+1, n+2);  
 
-                        // On arrange les points pour que leurs normales pointent vers l'exterieur de la sphere
-                        let v0 = mesh[i];
-                        let v1 = mesh[j];
-                        let v2 = mesh[k];
-
+                        // On arrange les points pour que leurs normales pointent vers l'exterieur de la sphere 
+                        let sj = j;
+                        let sk = k;
                         // Inversion du sens de lecture des points du triangles
-                        if (normal.dot( m ) < 0)  
-                            [v1, v2] = [v2, v1];
+                        if (normal.dot( m ) < 0) {
+                            sj = k;
+                            sk = j;
+                        }
+
+                        let v0 = mesh[i];
+                        let v1 = mesh[sj];
+                        let v2 = mesh[sk];
                         
                         this.vertices.push(v0.x, v0.y, v0.z);
                         this.vertices.push(v1.x, v1.y, v1.z);
                         this.vertices.push(v2.x, v2.y, v2.z);
+
+                        meshIndices.push(i, sj, sk);
+                        
+                        // Remember the connections
+                        // if (mesh[i].neighboors.indexOf(item) == -1)
+
+                        mesh[i].neighboors.add(sj);
+                        mesh[i].neighboors.add(sk);
+                        mesh[sj].neighboors.add(i);
+                        mesh[sj].neighboors.add(sk);
+                        mesh[sk].neighboors.add(i); 
+                        mesh[sk].neighboors.add(sj);   
 
                     } else if (polygones.length > 3) {
                         // TODO : Delaunay
@@ -266,7 +284,7 @@ class Sphere {
                 }
             }
         } 
-        return nTri; // On renvoi le nombre de triangle à rendre, car c'est une valeur qui est inconnu avant l'execution de l'algorithme de triangularisation.
+        return meshIndices;  
     }
 
     /**
@@ -279,36 +297,70 @@ class Sphere {
      * 
      * Les couleurs sont ajoutés dans la liste 1D this.colors, qui contient les valeurs RGBA de chaque point du maillage pour le rendu WebGL.
      * 
-     * @param {Array<Vec3>} mesh L'ensemble de point utilisé pour construire le maillage de la sphère
+     * @param {Array<Vec3>} mesh L'ensemble de points utilisé pour construire le maillage de la sphère.
+     * @param {Array<number>} indices L'ensemble des indices des points qui seront rendu.
      */
-    colorizeMeshByBestArea(mesh) {
-        const nTri = this.indices.length / 3; // Nombre de face que l'on doit rendre
+    colorizeMeshByBestArea(mesh, indices) {
+        const nTri = indices.length / 3; // Nombre de face que l'on doit rendre
         const optimumArea = Math.PI * 4 * (this.radius) ** 2 / nTri; // L'aire optimal des triangles pour qu'ils soient tous équilatéraux.
 
-        for (let i = 0; i < this.indices.length; i += 3) {
-            const iv0 = this.indices[i+0]*3;
-            const iv1 = this.indices[i+1]*3;
-            const iv2 = this.indices[i+2]*3;  
-            const a = area(new Vec3(
-                this.vertices[iv0],
-                this.vertices[iv0+1],
-                this.vertices[iv0+2]
-            ), new Vec3(
-                this.vertices[iv1],
-                this.vertices[iv1+1],
-                this.vertices[iv1+2]
-            ), new Vec3(
-                this.vertices[iv2],
-                this.vertices[iv2+1],
-                this.vertices[iv2+2]
-            ));   
+        for (let i = 0; i < indices.length; i += 3) { 
+            const v0 = mesh[indices[i+0]];
+            const v1 = mesh[indices[i+1]];
+            const v2 = mesh[indices[i+2]];  
+
+            const a = area(v0, v1, v2)
 
             const c = a < optimumArea ? a/optimumArea : optimumArea/a; // Inversion pour ne pas dépasser 1 
             this.colors.push(1-c, 0, c, 0); 
             this.colors.push(1-c, 0, c, 0); 
             this.colors.push(1-c, 0, c, 0); 
         }
-    }
+    } 
+    /**
+     * Ajoute des couleurs pour chaque points du maillages pour afficher le nombre de connection. 
+     * 
+     * La couleur est un gradient entre le bleu et le rouge, donnée par le rapport : 1 / nombre de voisins directs
+     * 
+     * Les couleurs sont ajoutés dans la liste 1D this.colors, qui contient les valeurs RGBA de chaque point du maillage pour le rendu WebGL.
+     * 
+     * @param {Array<Vec3>} mesh L'ensemble de points utilisé pour construire le maillage de la sphère.
+     * @param {Array<number>} indices L'ensemble des indices des points qui seront rendu.
+     */
+    colorizePointsByNumberOfConnection(mesh, indices) {
+        let max = -Infinity;
+        let min = Infinity;
+        for (let i = 0; i < indices.length; i ++) { 
+            const n = mesh[indices[i]].neighboors.size;
+            max = Math.max(max, n);
+            min = Math.min(max, n); 
+        }
+
+        for (let i = 0; i < indices.length; i += 3) { 
+            const v0 = mesh[indices[i+0]];
+            const v1 = mesh[indices[i+1]];
+            const v2 = mesh[indices[i+2]];  
+            let c; 
+
+            // Nombre total des voisins d'un point donné. 
+            const n0 = v0.neighboors.size;
+            const n1 = v1.neighboors.size;
+            const n2 = v2.neighboors.size;
+            // console.log(n0, n1, n2);
+
+            // const c0 = (n0-min)/(max-min) ;
+            // const c1 = (n1-min)/(max-min) ;
+            // const c2 = (n2-min)/(max-min) ;
+
+            const c0 = 1 - n0/max ;
+            const c1 = 1 - n1/max ;
+            const c2 = 1 - n2/max ;
+            
+            this.colors.push(0, c0, 1-c0, 0); 
+            this.colors.push(0, c1, 1-c1, 0);
+            this.colors.push(0, c2, 1-c2, 0);
+        }
+    } 
 
     makeSphere() {
         this.vertices = []
@@ -318,13 +370,13 @@ class Sphere {
         const toggle_point_preview = document.getElementById("toggle_point_preview").checked;
         const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked; 
         
-        const mesh = this.generatePointsFibonacci(this.n, this.radius);
-        this.convexTriangulate(mesh);
+        const mesh = this.generatePointsFibonacci(this.n, this.radius); // mesh is only used for convexTriangulate and coloring
+        const meshIndices = this.convexTriangulate(mesh); // meshIndices is only used for coloring
+
         if (separate_triangle_coloring) {
-            this.colorizeMeshByBestArea(mesh);
-        } else {
-            // TODO : add another color type
-            this.colorizeMeshByBestArea(mesh);
+            this.colorizeMeshByBestArea(mesh, meshIndices);
+        } else { 
+            this.colorizePointsByNumberOfConnection(mesh, meshIndices);
         }
  
         if (toggle_point_preview) {
