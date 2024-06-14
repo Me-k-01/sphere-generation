@@ -84,6 +84,9 @@ button:hover {
 button:active {
     border-color: #FF0000;
 }
+button.active {
+    border-color: #FF0000;
+}
 
 nav {
     display: block;

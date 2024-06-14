@@ -1,6 +1,12 @@
  
+/**
+ * @typedef {import('./vec3.js').Vec3} Vec3
+ */
 
-/** Sphere **/
+
+/** 
+ * Sphere en WebGL. 
+*/
 class Sphere {
     /**
      * Créer un Quad
@@ -48,6 +54,9 @@ class Sphere {
          * @private
          */
         this.colors = [];
+        
+        // Mesh creation  
+        this.makeSphere();
     } 
     
     /**
@@ -92,13 +101,12 @@ class Sphere {
      * Triangularisation d'un polygone convexe. 
      * Ajoute les points et les faces a rendre respectivement dans this.vertices et this.indices 
      * en créant des doublons de chaque vertex pour que les points des faces puissent être colorier differamment selon les faces.
-     * On retourne tout de même une liste d'indices lié au mesh, pour pouvoir retrouver leurs relations d'adjacences dans notre structures de données.
-     * 
-     * @param {Array<Vec3>} mesh Un ensemble de point appartenant a un polygone convexe.
-     * 
+     * On retourne tout de même une liste d'indices lié a this.mesh, pour pouvoir retrouver leurs relations d'adjacences dans notre structures de données.
+     *  
      * @returns {Array<number>} Retourne une liste d'indices de face qui seront rendu, liés à mesh
      */
-    convexTriangulate(mesh) {  
+    convexTriangulate() {  
+        const mesh = this.mesh // Un ensemble de point appartenant a un polygone convexe
         let nTri = 0; // Le nombre de triangle à rendre, n'est pas une valeur qui est connu avant l'execution de la procedure de triangularisation.
         let meshIndices = []; // Une liste des points qui seront rendu, groupé par paires de 3 car l'on rends uniquement des triangles.
 
@@ -154,7 +162,7 @@ class Sphere {
                             sj = k;
                             sk = j;
                         }
-
+                        
                         let v0 = mesh[i];
                         let v1 = mesh[sj];
                         let v2 = mesh[sk];
@@ -258,39 +266,58 @@ class Sphere {
         }
     } 
 
-    makeSphere() {
-        this.vertices = []
-        this.indices = []
-        this.colors = []
-
-        const toggle_point_preview = document.getElementById("toggle_point_preview").checked;
+    colorize(meshIndices) {
         const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked; 
-        
-        const mesh = this.generatePointsFibonacci(this.n, this.radius); // mesh is only used for convexTriangulate and coloring
-        const meshIndices = this.convexTriangulate(mesh); // meshIndices is only used for coloring
 
         if (separate_triangle_coloring) {
-            this.colorizeMeshByBestArea(mesh, meshIndices);
+            this.colorizeMeshByBestArea(this.mesh, meshIndices);
         } else { 
-            this.colorizePointsByNumberOfConnection(mesh, meshIndices);
+            this.colorizePointsByNumberOfConnection(this.mesh, meshIndices);
         }
- 
+    }
+
+    previewPoints() {
+        const toggle_point_preview = document.getElementById("toggle_point_preview").checked; 
         if (toggle_point_preview) {
-            for (const p of mesh) {
+            for (const p of this.mesh) {
                 addCube(p, this.vertices, this.indices, this.colors);
             }
         } 
     }
+
+    makeSphere() {
+        this.vertices = []
+        this.indices = []
+        this.colors = []
+        
+        this.mesh = this.generatePointsFibonacci(this.n, this.radius); // this.mesh is only used for convexTriangulate and coloring
+        const meshIndices = this.convexTriangulate(); // meshIndices is only used for coloring
+        this.colorize(meshIndices);
+        this.previewPoints();
+    }
+
+    /**
+     * Remplace les anciens points de la sphère par les nouveaux.
+     * @param {Array<Vec3>} points Les nouvelles positions des points de la sphère
+     */
+    applyPos(mesh) {
+        this.mesh = mesh; 
+        this.vertices = []
+        this.indices = []
+        this.colors = []
+        
+        const meshIndices = this.convexTriangulate();
+        this.colorize(meshIndices);
+        this.previewPoints();
+    }
+
      
     /**
      * Initialisation des buffers
      * @param {WebGLRenderingContext} gl Le contexte WebGL
      * @param {WebGLProgram} program Le program avec les shaders compilés
      */
-    initGL(gl, program) {
-        // Mesh creation  
-        this.makeSphere();
-
+    initGL(gl, program) {  
         /**
          * Le nombre de triangles à rendre (comprends les objets de visualisation des points)
          * @type {number}

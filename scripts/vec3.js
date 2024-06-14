@@ -5,12 +5,17 @@ class Vec3 {
     /** Créer un vecteur 3D
      * @param {number} x
      * @param {number} y
-     * @param {number} z
+     * @param {number} z 
      */
     constructor(x, y, z) {
         this.x = x;    
         this.y = y;        
         this.z = z; 
+        /**
+         * Le nombre de points du maillages de la sphère
+         * @type {Set<number>}
+         * @public
+         */
         this.neighboors = new Set();
     }
 
@@ -89,14 +94,14 @@ class Vec3 {
 
     /**
      *  Calcule la norme du vecteur.   
-     * @return {Vec3} La norme.
+     * @return {number} La norme.
      */ 
     getNorm() { 
         return Math.sqrt(this.x*this.x + this.y*this.y + this.z*this.z);
     }
  
     /**
-     *  Normalise un vecteur.
+     * Normalise un vecteur.
      * @return {Vec3} La valeur courante modifiée.
      */ 
     normalize() { 

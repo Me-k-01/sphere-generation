@@ -95,6 +95,7 @@ const polys = [
     // new Quad(new Vec3(0, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1), new Vec3(255, 255, 0)),
     new Sphere(new Vec3(0, 0, 0), 50, new Vec3(0, 255, 0))
 ] 
+const sphere = polys[0];
 const program = initGL();
 for (const p of polys)
     p.initGL(gl, program);
@@ -106,28 +107,28 @@ const camera = new Camera(canvas);
 const nSlider = document.getElementById("slider-n");
 const nInput = document.getElementById("input-n");
  
-function changeSphere(n) {
-    const sphere = polys[0];
-    sphere.n = n;
+function changeSphere(n) { 
+    sphere.n = n; 
+    sphere.makeSphere();
     sphere.initGL(gl, program);
 }
 
 nSlider.addEventListener("input", (event) => {
-    const v = event.target.value; 
-    nInput.value = v; 
-    changeSphere(v);
+    const n = event.target.value; 
+    nInput.value = n; 
+    changeSphere(n);
 });
 
 nInput.addEventListener("input", (event) => { 
-    const v = event.target.value;    
-    nSlider.value = v;
-    changeSphere(v);
+    const n = event.target.value;    
+    nSlider.value = n;
+    changeSphere(n);
 }); 
 document.getElementById("toggle_triangle_coloring").addEventListener("input", (event) => {  
-    changeSphere(polys[0].n);
+    changeSphere(sphere.n); // Update colors
 }); 
 document.getElementById("toggle_point_preview").addEventListener("input", (event) => {  
-    changeSphere(polys[0].n);
+    changeSphere(sphere.n); // Update colors
 }); 
 
 /**
