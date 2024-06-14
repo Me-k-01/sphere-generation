@@ -1,108 +1,4 @@
-
-/**
- * Ajoute un gizmo à l'affichage
- * @param {Vec3} pos Le centre du gizmo 
- * @param {Array<float>} vertices Vertex buffer object
- * @param {Array<float>} vertices Index buffer object
- * @param {Array<float>} vertices Color buffer
- */ 
-function addGizmo(pos, vertices, indices, colors, size = 0.02) {  
-    const offsetId = vertices.length / 3; // Nombre actuel de sommets / 3 (car chaque sommet a 3 coordonnées)
-     
-    // Appliquer la transformation et la position
-    const transformedVertices = [
-        // Front face
-        -1, -1, 1,      1, -1, 1,      1, 1, 1,     -1, 1, 1,
-        // Back face
-        -1, -1, -1,    -1, 1, -1,      1, 1, -1,     1, -1, -1,
-        // Top face
-        -1, 1, -1,     -1, 1, 1,       1, 1, 1,      1, 1, -1,
-        // Bottom face
-        -1, -1, -1,     1, -1, -1,     1, -1, 1,    -1, -1, 1,
-        // Right face
-        1, -1, -1,      1, 1, -1,      1, 1, 1,      1, -1, 1,
-        // Left face
-        -1, -1, -1,    -1, -1, 1,     -1, 1, 1,     -1, 1, -1,
-    ].map((p, i) => p * size/2 + pos.get(i % 3));
-    vertices.push(...transformedVertices);
  
-    // Mise à jour des indices en tenant compte de la base
-    const newIndices = [
-        0, 1, 2, 0, 2, 3, // front
-        4, 5, 6, 4, 6, 7, // back
-        8, 9, 10, 8, 10, 11, // top
-        12, 13, 14, 12, 14, 15, // bottom
-        16, 17, 18, 16, 18, 19, // right
-        20, 21, 22, 20, 22, 23, // left
-    ].map(i => i + offsetId);
-    indices.push(...newIndices);  
-
-    const faceCols = [
-        [1.0, 1.0, 1.0, 1.0], // Front face: white
-        [1.0, 0.0, 0.0, 1.0], // Back face: red
-        [0.0, 1.0, 0.0, 1.0], // Top face: green
-        [0.0, 0.0, 1.0, 1.0], // Bottom face: blue
-        [1.0, 1.0, 0.0, 1.0], // Right face: yellow
-        [1.0, 0.0, 1.0, 1.0], // Left face: purple
-    ];  
-    for (const c of faceCols) { 
-      // Four vertices of the face 
-      colors.push(...c, ...c, ...c, ...c) ;  
-    }   
-}
-
-/**
- * Ajoute un cube au buffer d'affichage web-gl
- * @param {Vec3} pos Le centre du gizmo 
- * @param {Array<float>} vertices Vertex buffer object
- * @param {Array<float>} vertices Index buffer object
- * @param {Array<float>} vertices Color buffer
- */ 
-function addCube(pos, vertices, indices, colors, size = 0.02) {  
-    const offsetId = vertices.length / 3; // Nombre actuel de sommets / 3 (car chaque sommet a 3 coordonnées)
-     
-    // Appliquer la transformation et la position
-    const transformedVertices = [ 
-        -1, -1, 1,      1, -1, 1,      1, 1, 1,     -1, 1, 1, // Front face
-        -1, -1, -1,    -1, 1, -1,      1, 1, -1,     1, -1, -1, // Back face
-    ].map((p, i) => p * size/2 + pos.get(i % 3));
-    vertices.push(...transformedVertices);
- 
-    // Mise à jour des indices en tenant compte de la base
-    const newIndices = [
-        0, 1, 2, 0, 2, 3, // front
-        4, 5, 6, 4, 6, 7, // back
-        5, 3, 2, 5, 2, 6, // top
-        4, 7, 1, 4, 1, 0, // bottom
-        7, 6, 2, 7, 2, 1, // right
-        4, 0, 3, 4, 3, 5, // left
-    ].map(i => i + offsetId);
-    indices.push(...newIndices);  
-
-    const c =  [1.0, 0.0, 0.0, 1.0] ; // blue  
-    colors.push(...c, ...c, ...c, ...c) ;  
-    colors.push(...c, ...c, ...c, ...c) ;  
-}
- 
-/**
- * Calulate the area of the triangle formed by v0, v1, v2
- * @param {Vec3} v0  
- * @param {Vec3} v1  
- * @param {Vec3} v2  
- */ 
-function area(v0, v1, v2) { 
-    const u = Vec3.sub(v1, v0);
-    const v = Vec3.sub(v2, v0); 
-    return u.cross(v).getNorm() / 2;
-}
-// Returns the middle of the triangle
-function middle(v0, v1, v2) {
-    return Vec3.add(v0, v1).add(v2);
-}
-
-function clamp(x, a, b) {
-    return Math.max( a, Math.min(x, b) );
-} 
 
 /** Sphere **/
 class Sphere {
@@ -250,9 +146,10 @@ class Sphere {
                         this.indices.push(n, n+1, n+2);  
 
                         // On arrange les points pour que leurs normales pointent vers l'exterieur de la sphere 
+                        // Avec une inversion du sens de lecture des points du triangles
                         let sj = j;
                         let sk = k;
-                        // Inversion du sens de lecture des points du triangles
+                        
                         if (normal.dot( m ) < 0) {
                             sj = k;
                             sk = j;
@@ -268,9 +165,7 @@ class Sphere {
 
                         meshIndices.push(i, sj, sk);
                         
-                        // Remember the connections
-                        // if (mesh[i].neighboors.indexOf(item) == -1)
-
+                        // Remember the connections for Thomson's problem
                         mesh[i].neighboors.add(sj);
                         mesh[i].neighboors.add(sk);
                         mesh[sj].neighboors.add(i);
@@ -279,7 +174,7 @@ class Sphere {
                         mesh[sk].neighboors.add(sj);   
 
                     } else if (polygones.length > 3) {
-                        // TODO : Delaunay
+                        // TODO : Triangulation de Delaunay dans les cas avec plus de 3 points sur un même plan bordure de sphère.
                     }
                 }
             }
@@ -309,12 +204,13 @@ class Sphere {
             const v1 = mesh[indices[i+1]];
             const v2 = mesh[indices[i+2]];  
 
-            const a = area(v0, v1, v2)
+            const area = getArea(v0, v1, v2)
+            
+            const areaErrRatio = area < optimumArea ? area/optimumArea : optimumArea/area // Rapport de l'erreur entre l'air optimum théorique et l'aire calculé. 
 
-            const c = a < optimumArea ? a/optimumArea : optimumArea/a; // Inversion pour ne pas dépasser 1 
-            this.colors.push(1-c, 0, c, 0); 
-            this.colors.push(1-c, 0, c, 0); 
-            this.colors.push(1-c, 0, c, 0); 
+            this.colors.push(1-areaErrRatio, 0, areaErrRatio, 0); 
+            this.colors.push(1-areaErrRatio, 0, areaErrRatio, 0); 
+            this.colors.push(1-areaErrRatio, 0, areaErrRatio, 0); 
         }
     } 
     /**

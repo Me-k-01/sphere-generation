@@ -3,13 +3,14 @@
 	<head>
 		<meta charset="UTF-8" />
 		<title>Facteur de forme</title>
-		<script src="scripts/gl_matrix.js"></script> 
-		<script src="scripts/ray.js"></script>
+		<script src="scripts/vec3_op.js"></script> 
 		<script src="scripts/vec3.js"></script> 
+		<script src="scripts/gl_matrix.js"></script> 
+		<script src="scripts/gl_utils.js"></script>  
 		<script src="scripts/camera.js"></script>
-		<script src="scripts/quad.js"></script>
 		<script src="scripts/sphere.js"></script>
 		<script src="scripts/main.js" defer></script>
+
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>
@@ -30,6 +31,7 @@
 						<div><input type="checkbox" name="toggle_triangle_coloring" id="toggle_triangle_coloring" checked autocomplete="off" > 
 							Toggle triangle area coloring
 						</div>
+						<div><button id="button-simulate-repulsion">Simulate repulsion</button></div>
 					</div> 
 				</div>
 			</div>
