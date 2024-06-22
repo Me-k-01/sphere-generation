@@ -17,10 +17,7 @@ function cycleRepulsion(spherePoints) {
     const velocities = new Array(spherePoints.length); 
 
     for (let i = 0; i < spherePoints.length; i++) {  
-        // Calculer la force uniquement sur les voisins directes 
         for (let j = i+1; j < spherePoints.length; j++) { 
-            // À noté que la force de répulsion sera appliqué deux fois dans notre routine.  
-            
             // Direction non-normalisé de i vers j
             const dir = Vec3.sub(spherePoints[i], spherePoints[j]); 
             const dist = dir.getNorm();
