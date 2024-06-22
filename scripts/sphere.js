@@ -60,7 +60,7 @@ class Sphere {
     } 
     
     /**
-     * Triangulisation de delauney contraintes 
+     * Triangulisation de Delaunay 
      * @param {Array<Vec3>} mesh Le radius de la sphere.
      */
     delaunay() {
@@ -69,7 +69,7 @@ class Sphere {
 
 
     /**
-     * Generation d'un ensemble de point circonscrit à une sphere à partir d'une courbe de fibonacci.
+     * Generation d'un ensemble de points circonscrits à une sphere à partir d'une courbe de fibonacci.
      * 
      * @param {number} nVertices Nombre de points sur la sphere à générer.
      * @param {number} radius Le radius de la sphere.
@@ -365,19 +365,19 @@ class Sphere {
      */
     render(gl) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBufferObject);
+
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBufferObject);
         gl.vertexAttribPointer(
             this.positionAttribLocation, // Attribute location
             3, // Number of elements per attribute
             gl.FLOAT, // Type of elements
             false, // Normalize?
-            0, // 3 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex 
+            0, // 3 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex (by default num of el * sizeof(type))
             0 // Offset from the beginning of a single vertex to this attribute
         ); 
         gl.enableVertexAttribArray(this.positionAttribLocation);   
-        
-        // Set color attribute
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
+         
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer); // Set color attribute
         gl.vertexAttribPointer( 
             this.colorAttribLocation,
             4,

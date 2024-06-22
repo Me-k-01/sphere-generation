@@ -27,7 +27,7 @@ function cycleRepulsion(spherePoints) {
             // La direction devient normalisée.
             dir.normalize();
 
-            const f = repulsionStrength / (dist * 2); // Division des forces par deux.
+            const f = repulsionStrength / dist; // Division des forces par deux.
 
             const dirI = Vec3.mul(dir, f);
             const dirJ = Vec3.mul(dir, -f); 
@@ -40,8 +40,7 @@ function cycleRepulsion(spherePoints) {
             if (velocities[j] !== undefined)
                 velocities[j].add(dirJ);
             else 
-                velocities[j] = dirJ;
-
+                velocities[j] = dirJ; 
         } 
     }
  

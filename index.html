@@ -12,6 +12,32 @@
 		<script src="scripts/repulsion_simulation.js" defer></script>
 		<script src="scripts/main.js" defer></script>
 
+		<script id="vertexShader" type="x-shader/x-vertex"> 
+			precision mediump float;
+			
+			attribute vec3 vPosition;
+			attribute vec4 vColor;
+			varying vec4 fragColor;
+			uniform mat4 mWorld;
+			uniform mat4 mView;
+			uniform mat4 mProj;
+			
+			void main()
+			{
+			  fragColor = vColor;
+			  gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);
+			}
+		</script>
+		<script id="fragmentShader" type="x-shader/x-fragment">
+			precision mediump float;
+			
+			varying vec4 fragColor;
+			void main()
+			{
+			  gl_FragColor = fragColor;
+			}
+		</script>
+
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>

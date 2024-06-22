@@ -1,39 +1,9 @@
 
-const vertexShaderText = 
-[
-    'precision mediump float;',
-    '',
-    'attribute vec3 vPosition;', 
-    'attribute vec4 vColor;',
-    'varying vec4 fragColor;', 
-    'uniform mat4 mWorld;',
-    'uniform mat4 mView;',
-    'uniform mat4 mProj;',
-    '',
-    'void main()',
-    '{',
-    '  fragColor = vColor;',
-    '  gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);',
-    '}'
-].join('\n');
-
-const fragmentShaderText =
-[
-    'precision mediump float;',
-    '',
-    'varying vec4 fragColor;',
-    'void main()',
-    '{',
-    '  gl_FragColor = fragColor;',
-    '}'
-].join('\n');
-
 // Controlleurs de la scène   
 const canvas = document.getElementById('canvas'); 
 canvas.width  = window.innerWidth; 
 canvas.height = window.innerHeight;
 const gl = canvas.getContext('webgl');
-
 
 
 /** Construit le contexte OpenGL. */
@@ -55,20 +25,20 @@ function initGL() {
     //gl.cullFace(gl.BACK);
 
     // Create shaders
-    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    const vertexShader   = gl.createShader(gl.VERTEX_SHADER);
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
-    gl.shaderSource(vertexShader, vertexShaderText);
-    gl.shaderSource(fragmentShader, fragmentShaderText);
+    gl.shaderSource(vertexShader  , document.getElementById("vertexShader").textContent);
+    gl.shaderSource(fragmentShader, document.getElementById("fragmentShader").textContent);
 
     gl.compileShader(vertexShader);
-    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+    if (! gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
         console.error('ERROR compiling vertex shader!', gl.getShaderInfoLog(vertexShader));
         return;
     }
 
     gl.compileShader(fragmentShader);
-    if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+    if (! gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
         console.error('ERROR compiling fragment shader!', gl.getShaderInfoLog(fragmentShader));
         return;
     }
