@@ -10,8 +10,15 @@ class Camera {
         this.nearPlane    = 0.1
         this.farPlane     = 1000
         this.fovRadian    = glMatrix.toRadian(fov) // FOV vertical en Radian
+        this.sensitivity = 0.01  // Mouse sensitivity
+        this.distance = 8  // Distance from the object
 
-        this.position = vec3.fromValues(0, 0, -8)
+        this.lastCursorPos = vec2.fromValues(0, 0) 
+
+        this.theta = Math.PI / 4  // Initial angle around the vertical axis (Y)
+        this.phi = Math.PI / 4    // Initial angle around the horizontal axis (X-Z)
+
+        this.position = vec3.fromValues(0, 0, -this.distance)
         this.target   = vec3.fromValues(0, 0, 0)
         this.upVector = vec3.fromValues(0, 1, 0)
 
@@ -19,8 +26,7 @@ class Camera {
         this.viewMatrix  = new Float32Array(16);
         this.projMatrix  = new Float32Array(16);
 
-        this.do_move_camera = true // Should we prevent control callback from acting (in case the user is hovering the gui for exemple)
-
+        this.stop = false // Stop la camera
 
         mat4.identity(this.worldMatrix);
         mat4.lookAt(this.viewMatrix, this.position, this.target, this.upVector);
@@ -72,25 +78,29 @@ class Camera {
             } 
         }
 
-        const mouseEvtHandler = (state) => (button) => {
-            switch (button) {
+        const mouseEvtHandler = (mouseState) => (event) => { 
+            switch (event.button) {
                 case 0:
-                    this.controller.left_click = state;
+                    this.controller.left_click = mouseState;
                     break;
                 case 1: 
-                    this.controller.middle_click = state;
+                    this.controller.middle_click = mouseState;
                     break;
                 case 2: 
-                    this.controller.right_click = state;
-                    break;
+                    this.controller.right_click = mouseState;
+                    break; 
+            }
+            if (mouseState === false) {
+                this.lastCursorPos = undefined;
             }
         }
 
         // Configuration des events
-        window.addEventListener("keyup", keyEvtHandler(false));
-        window.addEventListener("keydown", keyEvtHandler(true));
+        window.addEventListener("keyup"    , keyEvtHandler(false));
+        window.addEventListener("keydown"  , keyEvtHandler(true));
         window.addEventListener("mousedown", mouseEvtHandler(true));
-        window.addEventListener("mouseup", mouseEvtHandler(false));
+        window.addEventListener("mouseup"  , mouseEvtHandler(false));
+        window.addEventListener("mousemove", (evt) => this.mouseMoveCamera(evt.clientX, evt.clientY));
 
         const bLeft = document.getElementById("controller-left");
         bLeft.addEventListener("mousedown", () => {
@@ -120,50 +130,42 @@ class Camera {
     getAspectRatio() { 
         return this.canvas.clientWidth / this.canvas.clientHeight; 
     }
+ 
+    /**
+     * Controle de la camera avec la souris
+     * @param {number} clientX 
+     * @param {number} clientY 
+     */
+    mouseMoveCamera(clientX, clientY) {
+        if (this.stop || ! this.controller.left_click)
+            return;
+        
+        let cursorPos = vec2.fromValues(clientX, clientY);
 
-    // Translates the camera to a new position, and update the view matrix for OpenGL
-    setPosition(position) { 
-        this.position = position;
-        this.view_matrix = mat4.lookAt(this.viewMatrix, this.position, this.target, this.up_vector);
-    }
+        // Définie l'emplacement initial du curseur avant le deplacement
+        if (! this.lastCursorPos)
+            this.lastCursorPos = cursorPos;
+ 
+        let dPos = vec2.create();
+        vec2.subtract(dPos, cursorPos, this.lastCursorPos);
 
-
-    // Call back for mouse control : used to orient the camera
-    updateCameraRotation(window, xpos, ypos) {
-        if (! this.do_move_camera || ! this.controller.left_click) {
-            return
-        }
-        // Prevent jolting by setting the first mouse position
-        if (this.first_mouse) {
-            this.last_mouse_x = xpos
-            this.last_mouse_y = ypos
-            this.first_mouse = false
-        }
-
-        dx = xpos - this.last_mouse_x
-        dy = ypos - this.last_mouse_y
-
-        // Update angles based on mouse movement
-        this.theta += dx * this.sensitivity
-        this.phi   -= dy * this.sensitivity  // Inverted Y-axis
+        // Deplacement des coordonnée sphérique selon le déplacement de la souris
+        this.theta += dPos[0] * this.sensitivity;
+        this.phi   -= dPos[1] * this.sensitivity;  // Axe Y inversé
 
         // Clamp phi to avoid gimbal lock (prevent looking directly up or down)
-        this.phi = max(0.01, min(np.pi - 0.01, this.phi))
+        this.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.phi)) ;
+ 
+        this.lastCursorPos = cursorPos;
 
-        // Update last known position
-        this.last_mouse_x = xpos
-        this.last_mouse_y = ypos
+        // Convertion coordonné spherique en cartesien 
+        this.position = vec3.fromValues(
+            this.distance * Math.sin(this.phi) * Math.cos(this.theta),
+            this.distance * Math.cos(this.phi),
+            this.distance * Math.sin(this.phi) * Math.sin(this.theta)
+        );
 
-        // Convert spherical coordinate to cartesian
-        this.position.x = this.distance * np.sin(this.phi) * np.cos(this.theta)
-        this.position.y = this.distance * np.cos(this.phi)
-        this.position.z = this.distance * np.sin(this.phi) * np.sin(this.theta)
-
-        this.view_matrix = glm.lookAt(this.position, this.target, this.up_vector)
-
-        if (this.on_position_change) {
-            this.view_matrix = mat4.lookAt(this.viewMatrix, this.position, this.target, this.up_vector);
-        }
+        mat4.lookAt(this.viewMatrix, this.position, this.target, this.upVector);
     }
 
     /**
@@ -171,6 +173,18 @@ class Camera {
      * @param {number} ms Le temps en milliseconde depuis le dernier appel à update. 
      */
     updateMove(ms) {
+        this.viewAngleHorizontal += 0.0004 * (ms-this.lastUpdate) ;
+        mat4.rotate(this.yRotationMatrix, this.identityMatrix, this.viewAngleHorizontal, [0, 1, 0]);
+        mat4.rotate(this.xRotationMatrix, this.identityMatrix, this.viewAngleVertical, [1, 0, 0]);
+        mat4.mul(this.worldMatrix, this.yRotationMatrix, this.xRotationMatrix);
+        this.lastUpdate = ms; 
+    }
+
+    /**
+     * Effectue les déplacement de la caméra 
+     * @param {number} ms Le temps en milliseconde depuis le dernier appel à update. 
+     */
+    updateMoveArrow(ms) {
         const moveH = (+this.controller.right) + (-this.controller.left); 
         const moveV = (+this.controller.up) + (-this.controller.down); 
         this.viewAngleHorizontal += moveH * 0.004 *    (ms-this.lastUpdate) ;
@@ -182,12 +196,10 @@ class Camera {
      * Configure la caméra pour le rendu
      * @param {WebGLRenderingContext} gl Le contexte WebGL 
      */
-    render(gl) {
-        mat4.rotate(this.yRotationMatrix, this.identityMatrix, this.viewAngleHorizontal, [0, 1, 0]);
-        mat4.rotate(this.xRotationMatrix, this.identityMatrix, this.viewAngleVertical, [1, 0, 0]);
-        mat4.mul(this.worldMatrix, this.yRotationMatrix, this.xRotationMatrix);
+    render(ms) { 
         gl.uniformMatrix4fv(this.matWorldUniformLocation, gl.FALSE, this.worldMatrix);
         gl.uniformMatrix4fv(this.matProjUniformLocation, gl.FALSE, this.projMatrix);
+        gl.uniformMatrix4fv(this.matViewUniformLocation, gl.FALSE, this.viewMatrix);
     }
 
     /**

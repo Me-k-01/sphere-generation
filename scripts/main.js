@@ -76,11 +76,14 @@ const camera = new Camera(canvas);
    
 const nSlider = document.getElementById("slider-n");
 const nInput = document.getElementById("input-n");
- 
-function changeSphere(n) { 
+
+const changeSphere = (n) => {
     sphere.n = n; 
     sphere.makeSphere();
     sphere.initGL(gl, program);
+}
+const sphereMaker = (n) => () => { 
+    changeSphere(n)
 }
 
 nSlider.addEventListener("input", (event) => {
@@ -92,14 +95,11 @@ nSlider.addEventListener("input", (event) => {
 nInput.addEventListener("input", (event) => { 
     const n = event.target.value;    
     nSlider.value = n;
-    changeSphere(n);
-}); 
-document.getElementById("toggle_triangle_coloring").addEventListener("input", (event) => {  
-    changeSphere(sphere.n); // Update colors
-}); 
-document.getElementById("toggle_point_preview").addEventListener("input", (event) => {  
-    changeSphere(sphere.n); // Update colors
-}); 
+    changeSphere(n)();
+});
+
+document.getElementById("toggle_triangle_coloring").addEventListener("input", sphereMaker(sphere.n));
+document.getElementById("toggle_point_preview").addEventListener("input", sphereMaker(sphere.n));
 
 /**
  * Boucle de rendu.
@@ -107,7 +107,7 @@ document.getElementById("toggle_point_preview").addEventListener("input", (event
  */
 function render(ms) { 
     camera.updateMove(ms);
-    camera.render(gl);
+    camera.render(ms);
 
     gl.clearColor(0, 0, 0, 1.0);
     gl.clearDepth(1.0); // Clear everything
