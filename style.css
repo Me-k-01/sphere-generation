@@ -41,8 +41,7 @@ html, body {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-
-    width: 400px;
+    margin : auto
 }
 
 .group > h2 {

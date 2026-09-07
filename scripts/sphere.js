@@ -105,7 +105,7 @@ class Sphere {
      *  
      * @returns {Array<number>} Retourne une liste d'indices de face qui seront rendu, liés à mesh
      */
-    convexTriangulate() {  
+    convexHullBruteForce() {  
         const mesh = this.mesh // Un ensemble de point appartenant a un polygone convexe
         let nTri = 0; // Le nombre de triangle à rendre, n'est pas une valeur qui est connu avant l'execution de la procedure de triangularisation.
         let meshIndices = []; // Une liste des points qui seront rendu, groupé par paires de 3 car l'on rends uniquement des triangles.
@@ -120,7 +120,7 @@ class Sphere {
                     let normal = Vec3.sub(mesh[j], mesh[i]).cross(Vec3.sub(mesh[k], mesh[i])) ;
                     normal.normalize(); 
 
-                    let sign = 0;  
+                    let sign = 0;
                     // Verifie que le triangle est minimal, en s'assurant que chaque points est de l'autre coté du plan. 
                     let polygones = [i, j, k]; // Points appartenants au plan formant la face
 
@@ -290,8 +290,8 @@ class Sphere {
         this.indices = []
         this.colors = []
         
-        this.mesh = this.generatePointsFibonacci(this.n, this.radius); // this.mesh is only used for convexTriangulate and coloring
-        const meshIndices = this.convexTriangulate(); // meshIndices is only used for coloring
+        this.mesh = this.generatePointsFibonacci(this.n, this.radius); // this.mesh is only used for convexHullBruteForce and coloring
+        const meshIndices = this.convexHullBruteForce(); // meshIndices is only used for coloring
         this.colorize(meshIndices);
         this.previewPoints();
     }
@@ -306,7 +306,7 @@ class Sphere {
         this.indices = []
         this.colors = []
         
-        const meshIndices = this.convexTriangulate();
+        const meshIndices = this.convexHullBruteForce();
         this.colorize(meshIndices);
         this.previewPoints();
     }
