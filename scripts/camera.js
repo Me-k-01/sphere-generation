@@ -1,22 +1,23 @@
 /** Permet de déplacer la vue du contexte OpenGL selon les entrées clavier */
 class Camera {
-    constructor(canvas) {     
+    constructor(canvas, fov = 45) {     
         this.matWorldUniformLocation = gl.getUniformLocation(program, 'mWorld');
         this.matViewUniformLocation = gl.getUniformLocation(program, 'mView');
         this.matProjUniformLocation = gl.getUniformLocation(program, 'mProj');
 
-        this.nearPlane    = 0.1
-        this.farPlane     = 1000
-        this.fov          = 45 // FOV vertical in deg
         this.canvas = canvas
 
-        this.position = [0, 0, -8]
-        this.target = vec3.fromValues(0, 0, 0)
-        this.upVector = [0, 1, 0]
+        this.nearPlane    = 0.1
+        this.farPlane     = 1000
+        this.fovRadian    = glMatrix.toRadian(fov) // FOV vertical en Radian
+
+        this.position = vec3.fromValues(0, 0, -8)
+        this.target   = vec3.fromValues(0, 0, 0)
+        this.upVector = vec3.fromValues(0, 1, 0)
 
         this.worldMatrix = new Float32Array(16);
-        this.viewMatrix = new Float32Array(16);
-        this.projMatrix = new Float32Array(16);
+        this.viewMatrix  = new Float32Array(16);
+        this.projMatrix  = new Float32Array(16);
 
         this.do_move_camera = true // Should we prevent control callback from acting (in case the user is hovering the gui for exemple)
 
@@ -24,7 +25,7 @@ class Camera {
         mat4.identity(this.worldMatrix);
         mat4.lookAt(this.viewMatrix, this.position, this.target, this.upVector);
         // this.aspectRatio = this.canvas.clientWidth / this.canvas.clientHeight
-        mat4.perspective(this.projMatrix, glMatrix.toRadian(this.fov), this.getAspectRatio(), this.nearPlane, this.farPlane);
+        mat4.perspective(this.projMatrix, this.fovRadian, this.getAspectRatio(), this.nearPlane, this.farPlane);
 
         gl.uniformMatrix4fv(this.matWorldUniformLocation, gl.FALSE, this.worldMatrix);
         gl.uniformMatrix4fv(this.matViewUniformLocation, gl.FALSE, this.viewMatrix);
@@ -51,7 +52,7 @@ class Camera {
             right_click : false,
         }
           
-        const keyEvt = (state) => (event) => {
+        const keyEvtHandler = (state) => (event) => {
             if (event.defaultPrevented) {
                 return; // Do nothing if the event was already processed
             }
@@ -71,7 +72,7 @@ class Camera {
             } 
         }
 
-        const mouseEvt = (state) => (button) => {
+        const mouseEvtHandler = (state) => (button) => {
             switch (button) {
                 case 0:
                     this.controller.left_click = state;
@@ -83,14 +84,13 @@ class Camera {
                     this.controller.right_click = state;
                     break;
             }
-
         }
 
         // Configuration des events
-        window.addEventListener("keyup", keyEvt(false));
-        window.addEventListener("keydown", keyEvt(true));
-        window.addEventListener("mousedown", mouseEvt(true));
-        window.addEventListener("mouseup", mouseEvt(false));
+        window.addEventListener("keyup", keyEvtHandler(false));
+        window.addEventListener("keydown", keyEvtHandler(true));
+        window.addEventListener("mousedown", mouseEvtHandler(true));
+        window.addEventListener("mouseup", mouseEvtHandler(false));
 
         const bLeft = document.getElementById("controller-left");
         bLeft.addEventListener("mousedown", () => {
@@ -109,11 +109,15 @@ class Camera {
         window.addEventListener("resize", () => {
             this.canvas.width  = window.innerWidth;
             this.canvas.height = window.innerHeight;
-            mat4.perspective(this.projMatrix, glMatrix.toRadian(this.fov), this.getAspectRatio(), this.nearPlane, this.farPlane);
+            
+            gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+
+            mat4.perspective(this.projMatrix, this.fovRadian, this.getAspectRatio(), this.nearPlane, this.farPlane);
+            gl.uniformMatrix4fv(this.matProjUniformLocation, gl.FALSE, this.projMatrix);
         });
     } 
 
-    getAspectRatio() {
+    getAspectRatio() { 
         return this.canvas.clientWidth / this.canvas.clientHeight; 
     }
 
