@@ -101,13 +101,16 @@ nInput.addEventListener("input", (event) => {
 document.getElementById("toggle_triangle_coloring").addEventListener("input", sphereMaker(sphere.n));
 document.getElementById("toggle_point_preview").addEventListener("input", sphereMaker(sphere.n));
 
+let lastUpdate = 0;
 /**
  * Boucle de rendu.
  * @param {number} ms Le temps en seconde écoulé depuis le dernière appelle de la fonction.
  */
 function render(ms) { 
-    camera.updateMove(ms);
-    camera.render(ms);
+    const dt = ms - lastUpdate;
+    camera.updateMove(dt);
+    camera.updateMoveArrow(dt);
+    camera.render(dt);
 
     gl.clearColor(0, 0, 0, 1.0);
     gl.clearDepth(1.0); // Clear everything
@@ -116,8 +119,9 @@ function render(ms) {
     gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
      
     for (const p of polys)
-        p.render(gl)
+        p.render(dt)
 
+    lastUpdate = ms;
     requestAnimationFrame(render);
 }; 
 

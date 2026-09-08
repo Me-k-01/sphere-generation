@@ -361,9 +361,9 @@ class Sphere {
     
     /**
      * Rendu du polygone.
-     * @param {WebGLRenderingContext} gl Le contexte WebGL.
+     * @param {number} dt Le temps en milliseconde écoulé depuis le dernier appelle à la fonction. 
      */
-    render(gl) {
+    render(dt) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBufferObject);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBufferObject);

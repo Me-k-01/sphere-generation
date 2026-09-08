@@ -42,8 +42,6 @@ class Camera {
 
         this.identityMatrix = new Float32Array(16);
         mat4.identity(this.identityMatrix);
-
-        this.lastUpdate = 0;
         
         this.viewAngleHorizontal = Math.PI/3;
         this.viewAngleVertical = 0;
@@ -170,33 +168,31 @@ class Camera {
 
     /**
      * Effectue les déplacement de la caméra 
-     * @param {number} ms Le temps en milliseconde depuis le dernier appel à update. 
+     * @param {number} dt Le temps en milliseconde écoulé depuis le dernier appelle à la fonction. 
      */
-    updateMove(ms) {
-        this.viewAngleHorizontal += 0.0004 * (ms-this.lastUpdate) ;
+    updateMove(dt) {
+        this.viewAngleHorizontal += 0.0004 * dt ;
         mat4.rotate(this.yRotationMatrix, this.identityMatrix, this.viewAngleHorizontal, [0, 1, 0]);
         mat4.rotate(this.xRotationMatrix, this.identityMatrix, this.viewAngleVertical, [1, 0, 0]);
         mat4.mul(this.worldMatrix, this.yRotationMatrix, this.xRotationMatrix);
-        this.lastUpdate = ms; 
     }
 
     /**
      * Effectue les déplacement de la caméra 
-     * @param {number} ms Le temps en milliseconde depuis le dernier appel à update. 
+     * @param {number} dt Le temps en milliseconde écoulé depuis le dernier appelle à la fonction. 
      */
-    updateMoveArrow(ms) {
+    updateMoveArrow(dt) {
         const moveH = (+this.controller.right) + (-this.controller.left); 
         const moveV = (+this.controller.up) + (-this.controller.down); 
-        this.viewAngleHorizontal += moveH * 0.004 *    (ms-this.lastUpdate) ;
-        this.viewAngleVertical += moveV * 0.004 *    (ms-this.lastUpdate) ;
-        this.lastUpdate = ms; 
+        this.viewAngleHorizontal += moveH * 0.004 * dt;
+        this.viewAngleVertical += moveV * 0.004 * dt;
     }
     
     /**
      * Configure la caméra pour le rendu
-     * @param {WebGLRenderingContext} gl Le contexte WebGL 
+     * @param {number} dt Le temps en milliseconde écoulé depuis le dernier appelle à la fonction. 
      */
-    render(ms) { 
+    render(dt) { 
         gl.uniformMatrix4fv(this.matWorldUniformLocation, gl.FALSE, this.worldMatrix);
         gl.uniformMatrix4fv(this.matProjUniformLocation, gl.FALSE, this.projMatrix);
         gl.uniformMatrix4fv(this.matViewUniformLocation, gl.FALSE, this.viewMatrix);
