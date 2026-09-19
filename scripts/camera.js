@@ -78,8 +78,6 @@ class Camera {
         }
 
         const mouseEvtHandler = (mouseState) => (event) => {
-            if (event.defaultPrevented)
-                return; 
             switch (event.button) {
                 case 0:
                     this.controller.left_click = mouseState;
@@ -93,6 +91,7 @@ class Camera {
             }
             if (mouseState === false)
                 this.lastCursorPos = undefined;
+            event.preventDefault();
         }
 
         // Configuration des events
@@ -100,7 +99,10 @@ class Camera {
         window.addEventListener("keydown"  , keyEvtHandler(true));
         window.addEventListener("mousedown", mouseEvtHandler(true));
         window.addEventListener("mouseup"  , mouseEvtHandler(false));
-        window.addEventListener("mousemove", (evt) => this.mouseMoveCamera(evt.clientX, evt.clientY));
+        window.addEventListener("mousemove", (event) => {
+            this.mouseMoveCamera(event.clientX, event.clientY);         
+            event.preventDefault();
+        });
 
         window.addEventListener("resize", () => {
             this.canvas.width  = window.innerWidth;
