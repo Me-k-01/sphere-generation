@@ -50,23 +50,21 @@
 				<h2>Sphere parameters</h2>
 				<div class="sliders">
 					<div>
-						<input type="range" id="slider-n" name="N" value="4" min="4" max="100" step="1" autocomplete="off" />
-						<input type="number" id="input-n" name="N" value="4" min="4" max="100" step="1" autocomplete="off" />
-						<div><input type="checkbox" name="toggle_point_preview" id="toggle_point_preview" autocomplete="off" > 
+						<input type="range" id="slider-n" name="N" value="40" min="4" max="100" step="1" autocomplete="off" />
+						<input type="number" id="input-n" name="N" value="40" min="4" max="100" step="1" autocomplete="off" />
+						<div><input type="checkbox" name="toggle_point_preview" id="toggle_point_preview" checked autocomplete="off" > 
 							Toggle point preview
 						</div>
-						<div><input type="checkbox" name="toggle_triangle_coloring" id="toggle_triangle_coloring" checked autocomplete="off" > 
-							Toggle triangle area coloring
+						<div><input type="checkbox" name="toggle_camera_rotation" id="toggle_camera_rotation" checked autocomplete="off" > 
+							Toggle rotation
 						</div>
+						<!-- <div><input type="checkbox" name="toggle_triangle_coloring" id="toggle_triangle_coloring" autocomplete="off" > 
+							Toggle triangle area coloring
+						</div> -->
 						<div><button id="button-simulate-repulsion">Simulate repulsion</button></div>
 					</div> 
 				</div>
 			</div>
-			
-			<nav>
-				<button id="controller-left"> << </button>
-				<button id="controller-right"> >> </button>
-			</nav>
 		</div>
 	</body>
 </html>

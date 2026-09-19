@@ -13,12 +13,14 @@ class Camera {
         this.sensitivity = 0.01  // Mouse sensitivity
         this.distance = 8  // Distance from the object
 
-        this.lastCursorPos = vec2.fromValues(0, 0) 
+        this.rotationSpeed = 0.0001
+
+        this.lastCursorPos = undefined
 
         this.theta = Math.PI / 4  // Initial angle around the vertical axis (Y)
         this.phi = Math.PI / 4    // Initial angle around the horizontal axis (X-Z)
+        this.setPosFromPolar(this.theta, this.phi)
 
-        this.position = vec3.fromValues(0, 0, -this.distance)
         this.target   = vec3.fromValues(0, 0, 0)
         this.upVector = vec3.fromValues(0, 1, 0)
 
@@ -57,9 +59,8 @@ class Camera {
         }
           
         const keyEvtHandler = (state) => (event) => {
-            if (event.defaultPrevented) {
-                return; // Do nothing if the event was already processed
-            }
+            if (event.defaultPrevented)
+                return;
             switch (event.key) {
                 case "ArrowLeft":
                     this.controller.left = state;
@@ -76,7 +77,9 @@ class Camera {
             } 
         }
 
-        const mouseEvtHandler = (mouseState) => (event) => { 
+        const mouseEvtHandler = (mouseState) => (event) => {
+            if (event.defaultPrevented)
+                return; 
             switch (event.button) {
                 case 0:
                     this.controller.left_click = mouseState;
@@ -88,9 +91,8 @@ class Camera {
                     this.controller.right_click = mouseState;
                     break; 
             }
-            if (mouseState === false) {
+            if (mouseState === false)
                 this.lastCursorPos = undefined;
-            }
         }
 
         // Configuration des events
@@ -100,20 +102,6 @@ class Camera {
         window.addEventListener("mouseup"  , mouseEvtHandler(false));
         window.addEventListener("mousemove", (evt) => this.mouseMoveCamera(evt.clientX, evt.clientY));
 
-        const bLeft = document.getElementById("controller-left");
-        bLeft.addEventListener("mousedown", () => {
-            this.controller.left = true;
-        });
-        bLeft.addEventListener("mouseup", () => {
-            this.controller.left = false;
-        });
-        const bRight = document.getElementById("controller-right");
-        bRight.addEventListener("mousedown", () => {
-            this.controller.right = true;
-        });
-        bRight.addEventListener("mouseup", () => {
-            this.controller.right = false;
-        });
         window.addEventListener("resize", () => {
             this.canvas.width  = window.innerWidth;
             this.canvas.height = window.innerHeight;
@@ -127,6 +115,15 @@ class Camera {
 
     getAspectRatio() { 
         return this.canvas.clientWidth / this.canvas.clientHeight; 
+    }
+
+    setPosFromPolar(theta, phi) { 
+        // Convertion coordonné spherique en cartesien 
+        this.position = vec3.fromValues(
+            this.distance * Math.sin(phi) * Math.cos(theta),
+            this.distance * Math.cos(phi),
+            this.distance * Math.sin(phi) * Math.sin(theta)
+        );
     }
  
     /**
@@ -150,18 +147,11 @@ class Camera {
         // Deplacement des coordonnée sphérique selon le déplacement de la souris
         this.theta += dPos[0] * this.sensitivity;
         this.phi   -= dPos[1] * this.sensitivity;  // Axe Y inversé
-
         // Clamp phi to avoid gimbal lock (prevent looking directly up or down)
         this.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.phi)) ;
- 
+        
         this.lastCursorPos = cursorPos;
-
-        // Convertion coordonné spherique en cartesien 
-        this.position = vec3.fromValues(
-            this.distance * Math.sin(this.phi) * Math.cos(this.theta),
-            this.distance * Math.cos(this.phi),
-            this.distance * Math.sin(this.phi) * Math.sin(this.theta)
-        );
+        this.setPosFromPolar(this.theta, this.phi)
 
         mat4.lookAt(this.viewMatrix, this.position, this.target, this.upVector);
     }
@@ -171,7 +161,10 @@ class Camera {
      * @param {number} dt Le temps en milliseconde écoulé depuis le dernier appelle à la fonction. 
      */
     updateMove(dt) {
-        this.viewAngleHorizontal += 0.0004 * dt ;
+        if (!document.getElementById("toggle_camera_rotation").checked) 
+            return;
+        // Tourne autour de l'objet
+        this.viewAngleHorizontal += this.rotationSpeed * dt ;
         mat4.rotate(this.yRotationMatrix, this.identityMatrix, this.viewAngleHorizontal, [0, 1, 0]);
         mat4.rotate(this.xRotationMatrix, this.identityMatrix, this.viewAngleVertical, [1, 0, 0]);
         mat4.mul(this.worldMatrix, this.yRotationMatrix, this.xRotationMatrix);

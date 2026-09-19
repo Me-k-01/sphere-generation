@@ -267,17 +267,16 @@ class Sphere {
     } 
 
     colorize(meshIndices) {
-        const separate_triangle_coloring = document.getElementById("toggle_triangle_coloring").checked; 
+        const doPointColoring = document.getElementById("toggle_triangle_coloring")?.checked; 
 
-        if (separate_triangle_coloring) {
-            this.colorizeMeshByBestArea(this.mesh, meshIndices);
-        } else { 
+        if (doPointColoring)
             this.colorizePointsByNumberOfConnection(this.mesh, meshIndices);
-        }
+        else
+            this.colorizeMeshByBestArea(this.mesh, meshIndices);  
     }
 
     previewPoints() {
-        const toggle_point_preview = document.getElementById("toggle_point_preview").checked; 
+        const toggle_point_preview = document.getElementById("toggle_point_preview")?.checked; 
         if (toggle_point_preview) {
             for (const p of this.mesh) {
                 addCube(p, this.vertices, this.indices, this.colors);

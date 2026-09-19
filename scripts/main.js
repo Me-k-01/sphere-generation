@@ -62,8 +62,7 @@ function initGL() {
 
 // The objects to update and render on the scene
 const polys = [
-    // new Quad(new Vec3(0, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1), new Vec3(255, 255, 0)),
-    new Sphere(new Vec3(0, 0, 0), 50, new Vec3(0, 255, 0))
+    new Sphere(new Vec3(0, 0, 0), 4, new Vec3(0, 255, 0))
 ] 
 const sphere = polys[0];
 const program = initGL();
@@ -78,13 +77,23 @@ const nSlider = document.getElementById("slider-n");
 const nInput = document.getElementById("input-n");
 
 const changeSphere = (n) => {
+    if (n < 4) {
+        console.warn("Warning : Vertices number must be a higher than 3");
+        return;
+    }
+    if (n > 1000) {
+        console.warn("Warning : Vertices number is too high");
+        return;
+    }
     sphere.n = n; 
     sphere.makeSphere();
     sphere.initGL(gl, program);
-}
+};
 const sphereMaker = (n) => () => { 
     changeSphere(n)
-}
+};
+
+changeSphere(nSlider.value);
 
 nSlider.addEventListener("input", (event) => {
     const n = event.target.value; 
@@ -95,10 +104,12 @@ nSlider.addEventListener("input", (event) => {
 nInput.addEventListener("input", (event) => { 
     const n = event.target.value;    
     nSlider.value = n;
-    changeSphere(n)();
+    changeSphere(n);
 });
 
-document.getElementById("toggle_triangle_coloring").addEventListener("input", sphereMaker(sphere.n));
+
+
+document.getElementById("toggle_triangle_coloring")?.addEventListener("input", sphereMaker(sphere.n));
 document.getElementById("toggle_point_preview").addEventListener("input", sphereMaker(sphere.n));
 
 let lastUpdate = 0;
