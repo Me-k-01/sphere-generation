@@ -337,6 +337,18 @@ class Sphere {
     }
 
     /**
+     * Update des buffers
+     * @param {WebGLRenderingContext} gl Le contexte WebGL
+     * @param {WebGLProgram} program Le program avec les shaders compilés
+     */
+    updateBuffers(gl, program) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer.ref);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer.ref);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.colors), gl.STATIC_DRAW);
+    }
+
+    /**
      * Initialisation de buffer
      * @param {WebGLRenderingContext} gl Le contexte WebGL
      * @param {WebGLProgram} program Le program avec les shaders compilés  
@@ -347,10 +359,22 @@ class Sphere {
         const ref = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, ref);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-
         const attribLocation = gl.getAttribLocation(program, name);
 
         return {ref, attribLocation}
+    }
+
+    bindBuffer(buffer, elementSize) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.ref); // Set color attribute
+        gl.vertexAttribPointer(
+            buffer.attribLocation, // Attribute location
+            elementSize, // Number of elements per attribute
+            gl.FLOAT, // Type of elements
+            false, // Normalize?
+            0, // 3 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex (by default num of el * sizeof(type))
+            0 // Offset from the beginning of a single vertex to this attribute
+        ); 
+        gl.enableVertexAttribArray(buffer.attribLocation);  
     }
     
     /**
@@ -358,44 +382,16 @@ class Sphere {
      * @param {number} dt Le temps en milliseconde écoulé depuis le dernier appelle à la fonction. 
      */
     render(dt) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer.ref);
-
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBufferObject);
-        gl.vertexAttribPointer(
-            this.vertexBuffer.attribLocation, // Attribute location
-            3, // Number of elements per attribute
-            gl.FLOAT, // Type of elements
-            false, // Normalize?
-            0, // 3 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex (by default num of el * sizeof(type))
-            0 // Offset from the beginning of a single vertex to this attribute
-        ); 
-        gl.enableVertexAttribArray(this.vertexBuffer.attribLocation);   
-         
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer.ref); // Set color attribute
-        gl.vertexAttribPointer( 
-            this.colorBuffer.attribLocation,
-            4,
-            gl.FLOAT,
-            false,
-            0,
-            0,
-        ); 
-        gl.enableVertexAttribArray(this.colorBuffer.attribLocation);   
+        
+        this.bindBuffer(this.vertexBuffer, 3);
+        this.bindBuffer(this.colorBuffer, 4);
         gl.drawElements(gl.TRIANGLES, this.nVertices, gl.UNSIGNED_SHORT, 0);
 
         const toggle_point_preview = document.getElementById("toggle_point_preview")?.checked; 
         if (toggle_point_preview) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.singleColorBuffer.ref); // Set color attribute
-            gl.vertexAttribPointer( 
-                this.singleColorBuffer.attribLocation,
-                4,
-                gl.FLOAT,
-                false,
-                0,
-                0,
-            ); 
-            gl.enableVertexAttribArray(this.singleColorBuffer.attribLocation);   
-            gl.drawArrays(gl.POINTS, 0, this.nVertices);
+            this.bindBuffer(this.singleColorBuffer, 4);
+            gl.drawArrays(gl.POINTS, 0, this.nVertices, gl.UNSIGNED_SHORT, 0);
         }
     } 
 }

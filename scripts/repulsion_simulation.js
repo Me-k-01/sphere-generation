@@ -101,7 +101,7 @@ function simulateRepulsion() {
         v[i].mul(sphere.radius)
     }  
     sphere.applyPos(v);
-    sphere.initGL(gl, program);
+    sphere.updateBuffers(gl, program);
 }
 
 let simuID = undefined;
