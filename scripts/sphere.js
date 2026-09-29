@@ -273,17 +273,8 @@ class Sphere {
             this.colorizePointsByNumberOfConnection(this.mesh, meshIndices);
         else
             this.colorizeMeshByBestArea(this.mesh, meshIndices);  
-    }
-
-    previewPoints() {
-        const toggle_point_preview = document.getElementById("toggle_point_preview")?.checked; 
-        if (toggle_point_preview) {
-            for (const p of this.mesh) {
-                addCube(p, this.vertices, this.indices, this.colors);
-            }
-        } 
-    }
-
+    } 
+    
     makeSphere() {
         this.vertices = []
         this.indices = []
@@ -292,7 +283,7 @@ class Sphere {
         this.mesh = this.generatePointsFibonacci(this.n, this.radius); // this.mesh is only used for convexHullBruteForce and coloring
         const meshIndices = this.convexHullBruteForce(); // meshIndices is only used for coloring
         this.colorize(meshIndices);
-        this.previewPoints();
+        // this.previewPoints();
     }
 
     /**
@@ -307,7 +298,7 @@ class Sphere {
         
         const meshIndices = this.convexHullBruteForce();
         this.colorize(meshIndices);
-        this.previewPoints();
+        // this.previewPoints();
     }
 
      
@@ -331,31 +322,35 @@ class Sphere {
         this.nVertices = this.indices.length ; 
 
         // VBO
-        this.vertexBufferObject = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBufferObject);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
+        this.vertexBuffer = this.initFloatBuffer(gl, program, this.vertices, "vPosition");
 
         // IBO
         this.indexBufferObject = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBufferObject);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), gl.STATIC_DRAW);
+ 
 
-        this.positionAttribLocation = gl.getAttribLocation(program, 'vPosition'); 
-
-        this.initColorBuffer(gl, program); 
+        // this.initColorBuffer(gl, program); 
+        this.colorBuffer = this.initFloatBuffer(gl, program, this.colors, "vColor");
+        const singleColorBuffer = Array(this.colors.length).fill([0.8, 0.8, 0, 1]).flat();
+        this.singleColorBuffer = this.initFloatBuffer(gl, program, singleColorBuffer, "vColor");
     }
 
     /**
-     * Initialisation du color buffer
+     * Initialisation de buffer
      * @param {WebGLRenderingContext} gl Le contexte WebGL
      * @param {WebGLProgram} program Le program avec les shaders compilés  
+     * @param {number[]} data   
+     * @param {string} name   
      */
-    initColorBuffer(gl, program) {   
-        this.colorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.colors), gl.STATIC_DRAW);
+    initFloatBuffer(gl, program, data, name) {
+        const ref = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, ref);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 
-        this.colorAttribLocation = gl.getAttribLocation(program, "vColor");
+        const attribLocation = gl.getAttribLocation(program, name);
+
+        return {ref, attribLocation}
     }
     
     /**
@@ -363,30 +358,45 @@ class Sphere {
      * @param {number} dt Le temps en milliseconde écoulé depuis le dernier appelle à la fonction. 
      */
     render(dt) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBufferObject);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer.ref);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBufferObject);
         gl.vertexAttribPointer(
-            this.positionAttribLocation, // Attribute location
+            this.vertexBuffer.attribLocation, // Attribute location
             3, // Number of elements per attribute
             gl.FLOAT, // Type of elements
             false, // Normalize?
             0, // 3 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex (by default num of el * sizeof(type))
             0 // Offset from the beginning of a single vertex to this attribute
         ); 
-        gl.enableVertexAttribArray(this.positionAttribLocation);   
+        gl.enableVertexAttribArray(this.vertexBuffer.attribLocation);   
          
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer); // Set color attribute
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer.ref); // Set color attribute
         gl.vertexAttribPointer( 
-            this.colorAttribLocation,
+            this.colorBuffer.attribLocation,
             4,
             gl.FLOAT,
             false,
             0,
             0,
         ); 
-        gl.enableVertexAttribArray(this.colorAttribLocation);   
+        gl.enableVertexAttribArray(this.colorBuffer.attribLocation);   
         gl.drawElements(gl.TRIANGLES, this.nVertices, gl.UNSIGNED_SHORT, 0);
+
+        const toggle_point_preview = document.getElementById("toggle_point_preview")?.checked; 
+        if (toggle_point_preview) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.singleColorBuffer.ref); // Set color attribute
+            gl.vertexAttribPointer( 
+                this.singleColorBuffer.attribLocation,
+                4,
+                gl.FLOAT,
+                false,
+                0,
+                0,
+            ); 
+            gl.enableVertexAttribArray(this.singleColorBuffer.attribLocation);   
+            gl.drawArrays(gl.POINTS, 0, this.nVertices);
+        }
     } 
 }
 

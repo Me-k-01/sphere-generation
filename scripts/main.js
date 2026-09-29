@@ -89,9 +89,6 @@ const changeSphere = (n) => {
     sphere.makeSphere();
     sphere.initGL(gl, program);
 };
-const sphereMaker = (n) => () => { 
-    changeSphere(n)
-};
 
 changeSphere(nSlider.value);
 
@@ -105,12 +102,9 @@ nInput.addEventListener("input", (event) => {
     const n = event.target.value;    
     nSlider.value = n;
     changeSphere(n);
-});
+}); 
 
-
-
-document.getElementById("toggle_triangle_coloring")?.addEventListener("input", sphereMaker(sphere.n));
-document.getElementById("toggle_point_preview").addEventListener("input", sphereMaker(sphere.n));
+document.getElementById("toggle_triangle_coloring")?.addEventListener("input", () => changeSphere(n));
 
 let lastUpdate = 0;
 /**

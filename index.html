@@ -24,17 +24,19 @@
 			
 			void main()
 			{
-			  fragColor = vColor;
-			  gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);
+				fragColor = vColor;
+				gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);
+				gl_PointSize = 5.0;
 			}
 		</script>
 		<script id="fragmentShader" type="x-shader/x-fragment">
 			precision mediump float;
 			
 			varying vec4 fragColor;
+
 			void main()
 			{
-			  gl_FragColor = fragColor;
+			  	gl_FragColor = fragColor;
 			}
 		</script>
 

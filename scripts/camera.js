@@ -59,8 +59,6 @@ class Camera {
         }
           
         const keyEvtHandler = (state) => (event) => {
-            if (event.defaultPrevented)
-                return;
             switch (event.key) {
                 case "ArrowLeft":
                     this.controller.left = state;
@@ -91,7 +89,7 @@ class Camera {
             }
             if (mouseState === false)
                 this.lastCursorPos = undefined;
-            event.preventDefault();
+            // event.preventDefault();
         }
 
         // Configuration des events
@@ -101,7 +99,7 @@ class Camera {
         window.addEventListener("mouseup"  , mouseEvtHandler(false));
         window.addEventListener("mousemove", (event) => {
             this.mouseMoveCamera(event.clientX, event.clientY);         
-            event.preventDefault();
+            // event.preventDefault();
         });
 
         window.addEventListener("resize", () => {
